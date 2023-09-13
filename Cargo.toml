@@ -1,0 +1,25 @@
+[package]
+name = "pj_ai"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+x11 = { version = "2.21.0", features = ["xlib_xcb", "glx"] }
+x11rb = { version = "0.12.0", features = ["shm", "allow-unsafe-code"] }
+libc = "0.2.147"
+rand = "0.8.5"
+crossbeam-channel = "0.5.8"
+tensorflow = { version = "0.20.0", features = ["tensorflow_gpu"] }
+# plotlib uses an outdated version of the svg crate
+# the revision specified here updates its svg version to 0.13.1
+plotlib = { git = "https://github.com/milliams/plotlib", rev = "23d2fbabd3d4610d118b54a2520441031bb4dbf3" }
+serde_json = "1.0.103"
+serde = { version = "1.0.171", features = ["derive"] }
+bincode = "1.3.3"
+env_logger = "0.10.0"
+eframe = "0.22.0"
+winit = "0.28.6"
+glow = "0.12.3"
+egui_glow = "0.22.0"
