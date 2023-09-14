@@ -1,11 +1,10 @@
 use super::{ State, Transition };
-use crate::{ ImageOwned, ImageOwned2 };
-use crate::file_io::{ create_file_buf_write, open_file_buf_read, has_data_left };
+use crate::ImageOwned;
+use std::fs;
 use std::path::Path;
-use std::collections::{ VecDeque, HashMap };
 use tensorflow::{ Graph, SavedModelBundle, SessionOptions, SessionRunArgs, Tensor };
-use rand::prelude::{ IteratorRandom, SliceRandom };
-use std::rc::Rc;
+pub mod replay;
+use replay::ReplayMemory;
 
 fn state_to_pixels(state : &State) -> Vec<u8> {
     [(*state[0]).as_ref().data(), (*state[1]).as_ref().data(), (*state[2]).as_ref().data(), (*state[3]).as_ref().data()].concat()
@@ -175,36 +174,30 @@ impl Model {
     }
 }
 
-pub struct Agent {
+pub struct Agent<R : ReplayMemory> {
     model : Model,
-    memory_capacity: usize,
-    memory: VecDeque<Transition>
+    memory: R
 }
 
 type SavedTransition = ([usize; 4], [usize; 4], u8, f64, bool);
 
-impl Agent {
-    pub fn with_memory_capacity(memory_capacity : usize) -> Agent {
+impl<R : ReplayMemory> Agent<R> {
+    pub fn with_memory_capacity(memory_capacity : usize) -> Agent<R> {
         Agent {
             model : Model::new(),
-            memory_capacity,
-            memory: VecDeque::with_capacity(memory_capacity)
+            memory: R::with_max_size(memory_capacity)
         }
     }
     pub fn best_action(&self, state : &State) -> u8 {
         self.model.best_action(state)
     }
     pub fn remember(&mut self, transition : Transition) {
-        if self.memory.len() >= self.memory_capacity {
-            self.memory.pop_front();
-        }
-        self.memory.push_back(transition);
+        self.memory.add_transition(transition);
     }
     pub fn train_step(&mut self) -> Option<f32> {
         const BATCH_SIZE : usize = 32;
         if self.memory.len() >= BATCH_SIZE {
-            let mut batch = self.memory.iter().choose_multiple(&mut rand::thread_rng(), BATCH_SIZE);
-            batch.shuffle(&mut rand::thread_rng());
+            let batch = self.memory.sample_batch(BATCH_SIZE);
             Some(self.model.train_batch(&batch))
         } else {
             None
@@ -214,75 +207,15 @@ impl Agent {
         self.model.copy_control_to_target();
     }
     pub fn save<P : AsRef<Path>>(&self, path : P) {
-        self.model.save(path.as_ref().join("model_vars").to_str().unwrap());
-        let mut frames = vec![];
-        let mut transitions : Vec<SavedTransition> = vec![];
-        let mut frame_pointers_to_indices = HashMap::new();
-        let mut current_frame_index = 0;
-        for (state, next_state, action, reward, terminated) in &self.memory {
-            let mut state_frame_indices = vec![];
-            for frame in state {
-                let frame_index =
-                    if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
-                        *frame_index
-                    } else {
-                        frames.push(frame);
-                        frame_pointers_to_indices.insert(Rc::as_ptr(frame), current_frame_index);
-                        let frame_index = current_frame_index;
-                        current_frame_index += 1;
-                        frame_index
-                    };
-                state_frame_indices.push(frame_index);
-            }
-            let mut next_state_frame_indices = vec![];
-            for frame in next_state {
-                let frame_index =
-                    if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
-                        *frame_index
-                    } else {
-                        frames.push(frame);
-                        frame_pointers_to_indices.insert(Rc::as_ptr(frame), current_frame_index);
-                        let frame_index = current_frame_index;
-                        current_frame_index += 1;
-                        frame_index
-                    };
-                next_state_frame_indices.push(frame_index);
-            }
-            transitions.push(((*state_frame_indices).try_into().unwrap(), (*next_state_frame_indices).try_into().unwrap(), *action, *reward, *terminated));
-        }
-        // the experience replay queue can take up a lot of space, therefore we serialize each
-        // frame/transition separately in a streaming manner so as to not inadvertently clone
-        // the entire queue (which would cause a spike in RAM usage and might result in OOM)
-        let capacity_file = create_file_buf_write(path.as_ref().join("memory_capacity")).unwrap();
-        bincode::serialize_into(capacity_file, &self.memory_capacity).unwrap();
-        let mut frames_file = create_file_buf_write(path.as_ref().join("memory_frames")).unwrap();
-        for frame in frames {
-            bincode::serialize_into(&mut frames_file, &**frame).unwrap();
-        }
-        let mut transitions_file = create_file_buf_write(path.as_ref().join("memory_transitions")).unwrap();
-        for transition in transitions {
-            bincode::serialize_into(&mut transitions_file, &transition).unwrap();
-        }
+        let path = path.as_ref();
+        self.model.save(path.join("model_vars").to_str().unwrap());
+        let memory_path = path.join("memory");
+        fs::create_dir_all(&memory_path).unwrap();
+        self.memory.save(memory_path);
     }
     pub fn load<P : AsRef<Path>>(&mut self, path : P) {
-        self.model.load(path.as_ref().join("model_vars").to_str().unwrap());
-        let capacity_file = open_file_buf_read(path.as_ref().join("memory_capacity")).unwrap();
-        self.memory_capacity = bincode::deserialize_from(capacity_file).unwrap();
-        let mut frames_file = open_file_buf_read(path.as_ref().join("memory_frames")).unwrap();
-        let mut frames : Vec<Rc<ImageOwned2>> = vec![];
-        while has_data_left(&mut frames_file).unwrap() {
-            let frame = bincode::deserialize_from(&mut frames_file).unwrap();
-            let frame = Rc::new(frame);
-            frames.push(frame);
-        }
-        let mut memory = VecDeque::with_capacity(self.memory_capacity);
-        let mut transitions_file = open_file_buf_read(path.as_ref().join("memory_transitions")).unwrap();
-        while has_data_left(&mut transitions_file).unwrap() {
-            let (state_frame_indices, next_state_frame_indices, action, reward, terminated) : SavedTransition = bincode::deserialize_from(&mut transitions_file).unwrap();
-            let state = state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
-            let next_state = next_state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
-            memory.push_back((state, next_state, action, reward, terminated));
-        }
-        self.memory = memory;
+        let path = path.as_ref();
+        self.model.load(path.join("model_vars").to_str().unwrap());
+        self.memory.load(path.join("memory"));
     }
 }

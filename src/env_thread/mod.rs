@@ -2,6 +2,7 @@ mod training_schedule;
 use training_schedule::TrainingSchedule;
 mod agent;
 use agent::Agent;
+use agent::replay::{ ReplayQueue, ReplayMemory };
 mod env;
 use env::{ Env, StepError };
 use rand::Rng;
@@ -38,7 +39,7 @@ fn random_action() -> u8 {
 const THREAD_ID : ThreadId = ThreadId::Env;
 const THREAD_NAME : &str = "env";
 
-fn step(env : &mut Env, agent : &mut Agent, schedule : &mut TrainingSchedule, master_thread_sender : &Sender<MasterThreadMessage>, ui_thread_sender : &Sender<UiThreadMessage>) -> bool {
+fn step<R : ReplayMemory>(env : &mut Env, agent : &mut Agent<R>, schedule : &mut TrainingSchedule, master_thread_sender : &Sender<MasterThreadMessage>, ui_thread_sender : &Sender<UiThreadMessage>) -> bool {
     let state = env.state();
     let concated_state = concat_state_frames(&state);
     ui_thread_sender.send(UiThreadMessage::Frame(concated_state)).unwrap();
@@ -117,7 +118,7 @@ pub fn spawn_env_thread(receiver : Receiver<EnvThreadMessage>, query_receiver : 
         const TARGET_UPDATE_INTERVAL_STEPS : u32 = 10_000;
         const MEMORY_CAPACITY : usize = 1_000_000;
         let mut schedule = TrainingSchedule::new(EPS_MIN, EPS_MAX, N_EPS_RANDOM_STEPS, N_EPS_GREEDY_STEPS, TARGET_UPDATE_INTERVAL_STEPS);
-        let mut agent = Agent::with_memory_capacity(MEMORY_CAPACITY);
+        let mut agent : Agent<ReplayQueue> = Agent::with_memory_capacity(MEMORY_CAPACITY);
         let mut mode = ThreadMode::Held;
         loop {
             if let Ok(query) = query_receiver.try_recv() {
