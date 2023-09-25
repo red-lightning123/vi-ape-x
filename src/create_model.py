@@ -58,6 +58,22 @@ class Model(tf.Module):
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         return loss_value
     @tf.function
+    def train_on_batch_prioritized(self, states, updated_qvals, actions, probabilities, min_probability, replay_memory_len, beta):
+        importance_sampling_weights = (replay_memory_len * probabilities)**(-beta)
+        # assumes beta >= 0. the smallest probability corresponds to the largest sampling weight
+        max_importance_sampling_weight = (replay_memory_len * min_probability)**(-beta)
+        normalized_importance_sampling_weights = importance_sampling_weights / max_importance_sampling_weight
+        action_masks = tf.one_hot(actions, self.n_actions)
+        with tf.GradientTape() as tape:
+            predicted_qvals = self.model(states, training=True)
+            relevant_qvals = tf.reduce_sum(tf.multiply(predicted_qvals, action_masks), axis=1)
+            td_errors = updated_qvals - relevant_qvals
+            td_errors_expanded = tf.expand_dims(td_errors, axis=-1)
+            loss_value = self.loss(td_errors_expanded, 0, sample_weight = normalized_importance_sampling_weights)
+        grads = tape.gradient(loss_value, self.model.trainable_weights)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+        return loss_value, tf.abs(td_errors)
+    @tf.function
     def save(self, path):
         for variable in self.model.variables:
             tf.io.write_file(tf.strings.join([path, "/model/", variable.name]), tf.io.serialize_tensor(variable))
@@ -99,6 +115,24 @@ class Agent(tf.Module):
         )
         return loss
     @tf.function
+    def train_pred_step_prioritized(self, states, new_states, actions, rewards, dones, probabilities, min_probability, replay_memory_len, beta):
+        gamma = 0.99
+        control_new_state_qvals = self.control_model(new_states)
+        target_new_state_qvals = self.target_model(new_states)
+        next_actions = tf.argmax(control_new_state_qvals, axis=1)
+        updated_qvals = rewards + (1 - dones) * gamma * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
+
+        loss, abs_td_errors = self.control_model.train_on_batch_prioritized(
+            states,
+            updated_qvals,
+            actions,
+            probabilities,
+            min_probability,
+            replay_memory_len,
+            beta
+        )
+        return loss, abs_td_errors
+    @tf.function
     def copy_control_to_target(self):
         '''
         copying only trainable weights means non-trainable variables like the
@@ -127,10 +161,15 @@ next_states = tf.zeros([32, 8, 128, 72], dtype=tf.uint8)
 actions = tf.zeros([32], dtype=tf.uint8)
 rewards = tf.zeros([32])
 dones = tf.zeros([32], dtype=tf.float32)
+probabilities = tf.zeros([32], dtype=tf.float32)
+min_probability = tf.zeros([], dtype=tf.float32)
+replay_memory_len = tf.zeros([], dtype=tf.float32)
+beta = tf.zeros([], dtype=tf.float32)
 path = tf.constant("path")
 
 best_action = agent.best_action.get_concrete_function(single_state)
 train_pred_step = agent.train_pred_step.get_concrete_function(states, next_states, actions, rewards, dones)
+train_pred_step_prioritized = agent.train_pred_step_prioritized.get_concrete_function(states, next_states, actions, rewards, dones, probabilities, min_probability, replay_memory_len, beta)
 copy_control_to_target = agent.copy_control_to_target.get_concrete_function()
 save = agent.save.get_concrete_function(path)
 load = agent.load.get_concrete_function(path)
@@ -138,6 +177,7 @@ load = agent.load.get_concrete_function(path)
 signatures = {
     "best_action": best_action,
     "train_pred_step": train_pred_step,
+    "train_pred_step_prioritized": train_pred_step_prioritized,
     "copy_control_to_target": copy_control_to_target,
     "save": save,
     "load": load

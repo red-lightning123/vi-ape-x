@@ -2,7 +2,7 @@ mod training_schedule;
 use training_schedule::TrainingSchedule;
 mod agent;
 use agent::Agent;
-use agent::replay::{ ReplayQueue, ReplayMemory };
+use agent::replay::{ ReplayPrioritized, ReplayMemory };
 mod env;
 use env::{ Env, StepError };
 use rand::Rng;
@@ -67,7 +67,16 @@ fn step<R : ReplayMemory>(env : &mut Env, agent : &mut Agent<R>, schedule : &mut
         agent.remember(transition);
     }
     if !schedule.is_on_eps_random() {
-        if let Some(loss) = agent.train_step() {
+        const BETA_START : f64 = 0.4;
+        const BETA_END : f64 = 1.0;
+        const N_BETA_ANNEALING_FRAMES : u32 = 2_000_000;
+        let beta = BETA_START + (BETA_END - BETA_START) * f64::from(schedule.n_step()) / f64::from(N_BETA_ANNEALING_FRAMES);
+        let beta = if beta > BETA_END {
+                BETA_END
+            } else {
+                beta
+            };
+        if let Some(loss) = agent.train_step(beta) {
             const STEPS_PER_PRINT : u32 = 10000;
             if schedule.n_step() % STEPS_PER_PRINT == 0 {
                 println!("n_step : {}, loss : {loss}", schedule.n_step());
@@ -118,7 +127,7 @@ pub fn spawn_env_thread(receiver : Receiver<EnvThreadMessage>, query_receiver : 
         const TARGET_UPDATE_INTERVAL_STEPS : u32 = 10_000;
         const MEMORY_CAPACITY : usize = 1_000_000;
         let mut schedule = TrainingSchedule::new(EPS_MIN, EPS_MAX, N_EPS_RANDOM_STEPS, N_EPS_GREEDY_STEPS, TARGET_UPDATE_INTERVAL_STEPS);
-        let mut agent : Agent<ReplayQueue> = Agent::with_memory_capacity(MEMORY_CAPACITY);
+        let mut agent : Agent<ReplayPrioritized> = Agent::with_memory_capacity(MEMORY_CAPACITY);
         let mut mode = ThreadMode::Held;
         loop {
             if let Ok(query) = query_receiver.try_recv() {

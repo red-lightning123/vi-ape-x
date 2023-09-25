@@ -106,6 +106,81 @@ impl Model {
 
         output_tensor.get(&[])
     }
+    fn train_batch_prioritized(&mut self, batch_transitions : &[&Transition], batch_probabilities : &[f64], min_probability : f64, replay_memory_len : usize, beta : f64) -> (f32, Vec<f64>) {
+        let session = &self.model_bundle.session;
+        let signature = self.model_bundle.meta_graph_def().get_signature("train_pred_step_prioritized").unwrap();
+
+        let states_arg_info = signature.get_input("states").unwrap();
+        let next_states_arg_info = signature.get_input("new_states").unwrap();
+        let actions_arg_info = signature.get_input("actions").unwrap();
+        let rewards_arg_info = signature.get_input("rewards").unwrap();
+        let dones_arg_info = signature.get_input("dones").unwrap();
+        let probabilities_arg_info = signature.get_input("probabilities").unwrap();
+        let min_probability_arg_info = signature.get_input("min_probability").unwrap();
+        let replay_memory_len_arg_info = signature.get_input("replay_memory_len").unwrap();
+        let beta_arg_info = signature.get_input("beta").unwrap();
+        let output_loss_info = signature.get_output("output_0").unwrap();
+        let output_abs_td_errors_info = signature.get_output("output_1").unwrap();
+        
+        let states_arg_op = self.graph.operation_by_name_required(&states_arg_info.name().name).unwrap();
+        let next_states_arg_op = self.graph.operation_by_name_required(&next_states_arg_info.name().name).unwrap();
+        let actions_arg_op = self.graph.operation_by_name_required(&actions_arg_info.name().name).unwrap();
+        let rewards_arg_op = self.graph.operation_by_name_required(&rewards_arg_info.name().name).unwrap();
+        let dones_arg_op = self.graph.operation_by_name_required(&dones_arg_info.name().name).unwrap();
+        let probabilities_arg_op = self.graph.operation_by_name_required(&probabilities_arg_info.name().name).unwrap();
+        let min_probability_arg_op = self.graph.operation_by_name_required(&min_probability_arg_info.name().name).unwrap();
+        let replay_memory_len_arg_op = self.graph.operation_by_name_required(&replay_memory_len_arg_info.name().name).unwrap();
+        let beta_arg_op = self.graph.operation_by_name_required(&beta_arg_info.name().name).unwrap();
+        let output_loss_op = self.graph.operation_by_name_required(&output_loss_info.name().name).unwrap();
+        let output_abs_td_errors_op = self.graph.operation_by_name_required(&output_abs_td_errors_info.name().name).unwrap();
+        
+        let mut states = Vec::with_capacity(32*8*128*72);
+        let mut next_states = Vec::with_capacity(32*8*128*72);
+        let mut actions = Vec::with_capacity(32);
+        let mut rewards = Vec::with_capacity(32);
+        let mut dones = Vec::with_capacity(32);
+        for (state, next_state, action, reward, terminated) in batch_transitions {
+            states.extend(state_to_pixels(state));
+            next_states.extend(state_to_pixels(next_state));
+            actions.push(*action);
+            rewards.push(*reward as f32);
+            dones.push(f32::from(u8::from(*terminated)));
+        }
+        
+        let states_tensor = Tensor::new(&[32, 8, 128, 72]).with_values(&states).unwrap();
+        let next_states_tensor = Tensor::new(&[32, 8, 128, 72]).with_values(&next_states).unwrap();
+        let actions_tensor = Tensor::new(&[32]).with_values(&actions).unwrap();
+        let rewards_tensor = Tensor::new(&[32]).with_values(&rewards).unwrap();
+        let dones_tensor = Tensor::new(&[32]).with_values(&dones).unwrap();
+        let probabilities_tensor = Tensor::new(&[32]).with_values(&batch_probabilities.iter().map(|x| *x as f32).collect::<Vec<_>>()).unwrap();
+        let min_probability_tensor = Tensor::new(&[]).with_values(&[min_probability as f32]).unwrap();
+        let replay_memory_len_tensor = Tensor::new(&[]).with_values(&[replay_memory_len as f32]).unwrap();
+        let beta_tensor = Tensor::new(&[]).with_values(&[beta as f32]).unwrap();
+
+        let mut args = SessionRunArgs::new();
+
+        args.add_feed(&states_arg_op, 0, &states_tensor);
+        args.add_feed(&next_states_arg_op, 0, &next_states_tensor);
+        args.add_feed(&actions_arg_op, 0, &actions_tensor);
+        args.add_feed(&rewards_arg_op, 0, &rewards_tensor);
+        args.add_feed(&dones_arg_op, 0, &dones_tensor);
+        args.add_feed(&probabilities_arg_op, 0, &probabilities_tensor);
+        args.add_feed(&min_probability_arg_op, 0, &min_probability_tensor);
+        args.add_feed(&replay_memory_len_arg_op, 0, &replay_memory_len_tensor);
+        args.add_feed(&beta_arg_op, 0, &beta_tensor);
+
+        let output_loss_fetch_token = args.request_fetch(&output_loss_op, 0);
+        let output_abs_td_errors_fetch_token = args.request_fetch(&output_abs_td_errors_op, 1);
+
+        session
+            .run(&mut args)
+            .expect("train_batch_prioritized couldn't run session");
+
+        let output_loss_tensor : Tensor<f32> = args.fetch(output_loss_fetch_token).unwrap();
+        let output_abs_td_errors_tensor : Tensor<f32> = args.fetch(output_abs_td_errors_fetch_token).unwrap();
+
+        (output_loss_tensor.get(&[]), output_abs_td_errors_tensor.iter().map(|x| *x as f64).collect::<Vec<_>>())
+    }
     fn copy_control_to_target(&mut self) {
         let session = &self.model_bundle.session;
         let signature = self.model_bundle.meta_graph_def().get_signature("copy_control_to_target").unwrap();
@@ -194,11 +269,18 @@ impl<R : ReplayMemory> Agent<R> {
     pub fn remember(&mut self, transition : Transition) {
         self.memory.add_transition(transition);
     }
-    pub fn train_step(&mut self) -> Option<f32> {
+    pub fn train_step(&mut self, beta : f64) -> Option<f32> {
         const BATCH_SIZE : usize = 32;
         if self.memory.len() >= BATCH_SIZE {
-            let batch = self.memory.sample_batch(BATCH_SIZE);
-            Some(self.model.train_batch(&batch))
+            // TODO: try to support both prioritized and non-prioritized
+            // replay memory. for example, batch errors shouldn't be computed
+            // when replay memory isn't prioritized
+            let (batch_indices, batch_probabilities, batch_transitions) = self.memory.sample_batch_prioritized(BATCH_SIZE);
+            let min_probability = self.memory.min_probability();
+            let (loss, batch_abs_td_errors) = self.model.train_batch_prioritized(&batch_transitions, &batch_probabilities, min_probability, self.memory.len(), beta);
+            const ALPHA : f64 = 0.6;
+            self.memory.update_priorities_with_td_errors(&batch_indices, &batch_abs_td_errors, ALPHA);
+            Some(loss)
         } else {
             None
         }
