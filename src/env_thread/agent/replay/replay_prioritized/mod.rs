@@ -1,5 +1,5 @@
 use crate::env_thread::agent::Transition;
-use crate::env_thread::agent::SavedTransition;
+use super::SavedTransition;
 use super::ReplayMemory;
 mod priority_circ_buffer;
 use priority_circ_buffer::{ PriorityCircBuffer, Zero };

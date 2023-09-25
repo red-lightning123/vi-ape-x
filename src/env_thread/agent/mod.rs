@@ -11,8 +11,6 @@ pub struct Agent<R : ReplayMemory> {
     memory: R
 }
 
-type SavedTransition = ([usize; 4], [usize; 4], u8, f64, bool);
-
 impl<R : ReplayMemory> Agent<R> {
     pub fn with_memory_capacity(memory_capacity : usize) -> Agent<R> {
         Agent {

@@ -1,5 +1,5 @@
 use crate::env_thread::agent::Transition;
-use crate::env_thread::agent::SavedTransition;
+use super::SavedTransition;
 use crate::ImageOwned2;
 use super::ReplayMemory;
 use crate::file_io::{ create_file_buf_write, open_file_buf_read, has_data_left };
