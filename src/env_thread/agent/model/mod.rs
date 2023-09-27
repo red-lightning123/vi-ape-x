@@ -10,7 +10,6 @@ fn state_to_pixels(state : &State) -> Vec<u8> {
 
 pub struct Model {
     model_bundle : SavedModelBundle,
-    graph : Graph,
     fns : ModelFns
 }
 
@@ -21,7 +20,6 @@ impl Model {
         let fns = ModelFns::new(&model_bundle, &graph);
         Model {
             model_bundle,
-            graph,
             fns
         }
     }
