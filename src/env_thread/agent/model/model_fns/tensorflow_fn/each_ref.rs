@@ -8,7 +8,7 @@ const fn uninit_array<const N: usize, T>() -> [MaybeUninit<T>; N] {
     unsafe { MaybeUninit::<[MaybeUninit<T>; N]>::uninit().assume_init() }
 }
 
-pub fn each_ref<const N : usize, T>(s : &[T; N]) -> [&T; N] {
+pub fn each_ref<const N: usize, T>(s: &[T; N]) -> [&T; N] {
     // Unlike in `map`, we don't need a guard here, as dropping a reference
     // is a noop.
     let mut out = uninit_array::<N, &T>();

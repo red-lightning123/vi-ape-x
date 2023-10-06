@@ -1,21 +1,45 @@
-use rand::Rng;
-use std::ops::{ Add, Sub, SubAssign, Mul, Div };
-use rand::distributions::{ Distribution, Standard };
 use super::SumTree;
 use super::Zero;
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
+use std::ops::{Add, Div, Mul, Sub, SubAssign};
 
 pub trait PriorityTree<P> {
-    fn sample<R>(&self, rng : &mut R) -> usize
-    where R : Rng;
-    fn sample_from_range<R>(&self, range_start : P, range_end : P, rng : &mut R) -> usize
-    where R : Rng;
+    fn sample<R>(&self, rng: &mut R) -> usize
+    where
+        R: Rng;
+    fn sample_from_range<R>(&self, range_start: P, range_end: P, rng: &mut R) -> usize
+    where
+        R: Rng;
 }
 
-pub trait Priority: Zero + Clone + Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + SubAssign + Mul<Output = Self> + Div<Output = Self> { }
-impl<P> Priority for P where P: Zero + Clone + Copy + PartialOrd + Add<Output = Self> + Sub<Output = Self> + SubAssign + Mul<Output = Self> + Div<Output = Self> { }
+pub trait Priority:
+    Zero
+    + Clone
+    + Copy
+    + PartialOrd
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + SubAssign
+    + Mul<Output = Self>
+    + Div<Output = Self>
+{
+}
+impl<P> Priority for P where
+    P: Zero
+        + Clone
+        + Copy
+        + PartialOrd
+        + Add<Output = Self>
+        + Sub<Output = Self>
+        + SubAssign
+        + Mul<Output = Self>
+        + Div<Output = Self>
+{
+}
 
-impl<P : Priority> SumTree<P> {
-    fn sample_by_priority_sum_from_left(&self, mut priority_sum_from_left : P) -> usize {
+impl<P: Priority> SumTree<P> {
+    fn sample_by_priority_sum_from_left(&self, mut priority_sum_from_left: P) -> usize {
         let mut node = self.root();
         loop {
             match self.children(node) {
@@ -25,31 +49,35 @@ impl<P : Priority> SumTree<P> {
                 (Some(left), Some(right)) => {
                     let priority_left = self.value(left);
                     let chose_left = priority_sum_from_left < priority_left;
-                    node =
-                        if chose_left {
-                            left
-                        } else {
-                            priority_sum_from_left -= priority_left;
-                            right
-                        };
+                    node = if chose_left {
+                        left
+                    } else {
+                        priority_sum_from_left -= priority_left;
+                        right
+                    };
                 }
             }
         }
     }
 }
 
-impl<P : Priority> PriorityTree<P> for SumTree<P>
+impl<P: Priority> PriorityTree<P> for SumTree<P>
 where
-Standard : Distribution<P> {
-    fn sample_from_range<R>(&self, range_start : P, range_end : P, rng : &mut R) -> usize
-    where R : Rng {
+    Standard: Distribution<P>,
+{
+    fn sample_from_range<R>(&self, range_start: P, range_end: P, rng: &mut R) -> usize
+    where
+        R: Rng,
+    {
         let priority_total = self.value(self.root());
         let point_chosen = range_start + rng.gen::<P>() * (range_end - range_start);
         let point_scaled = point_chosen * priority_total;
         self.sample_by_priority_sum_from_left(point_scaled)
     }
-    fn sample<R>(&self, rng : &mut R) -> usize
-    where R : Rng {
+    fn sample<R>(&self, rng: &mut R) -> usize
+    where
+        R: Rng,
+    {
         let priority_total = self.value(self.root());
         self.sample_by_priority_sum_from_left(rng.gen::<P>() * priority_total)
     }

@@ -1,15 +1,12 @@
 use tensorflow::Operation;
 pub struct OutputLocation {
-    op : Operation,
-    index : i32
+    op: Operation,
+    index: i32,
 }
 
 impl OutputLocation {
-    pub fn new(op : Operation, index : i32) -> OutputLocation {
-        OutputLocation {
-            op,
-            index
-        }
+    pub fn new(op: Operation, index: i32) -> OutputLocation {
+        OutputLocation { op, index }
     }
     pub fn op(&self) -> &Operation {
         &self.op
@@ -18,4 +15,3 @@ impl OutputLocation {
         self.index
     }
 }
-

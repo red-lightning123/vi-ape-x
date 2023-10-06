@@ -1,7 +1,10 @@
-use crate::{ MasterThreadMessage, UiThreadMessage };
-use crossbeam_channel::{ Sender, Receiver };
+use crate::{MasterThreadMessage, UiThreadMessage};
+use crossbeam_channel::{Receiver, Sender};
 
-pub fn spawn_egui_ui_thread(_receiver : Receiver<UiThreadMessage>, _master_thread_sender : Sender<MasterThreadMessage>) -> std::thread::JoinHandle<()> {
+pub fn spawn_egui_ui_thread(
+    _receiver: Receiver<UiThreadMessage>,
+    _master_thread_sender: Sender<MasterThreadMessage>,
+) -> std::thread::JoinHandle<()> {
     unimplemented!()
     // egui based ui is not currently supported, the gl variant should be used instead
     // the following code could be adapted into a working implementation, but some changes
