@@ -1,3 +1,4 @@
+use super::model::Model;
 use super::{State, Transition};
 mod model_fns;
 use crate::ImageOwned;
@@ -14,21 +15,24 @@ fn state_to_pixels(state: &State) -> Vec<u8> {
     .concat()
 }
 
-pub struct Model {
+pub struct BasicModel {
     model_bundle: SavedModelBundle,
     fns: ModelFns,
 }
 
-impl Model {
-    pub fn new() -> Model {
+impl BasicModel {
+    pub fn new() -> BasicModel {
         let mut graph = Graph::new();
         let model_bundle =
             SavedModelBundle::load(&SessionOptions::new(), ["serve"], &mut graph, "model")
                 .expect("Couldn't load model");
         let fns = ModelFns::new(&model_bundle, &graph);
-        Model { model_bundle, fns }
+        BasicModel { model_bundle, fns }
     }
-    pub fn best_action(&self, state: &State) -> u8 {
+}
+
+impl Model for BasicModel {
+    fn best_action(&self, state: &State) -> u8 {
         let state_values = state_to_pixels(state);
         let state_arg = Tensor::new(&[8, 128, 72])
             .with_values(&state_values)
@@ -40,7 +44,7 @@ impl Model {
             .call(&self.model_bundle.session, (state_arg,));
         action.get(&[]) as u8
     }
-    pub fn train_batch(&mut self, batch: &[&Transition]) -> f32 {
+    fn train_batch(&mut self, batch: &[&Transition]) -> f32 {
         let mut states = Vec::with_capacity(32 * 8 * 128 * 72);
         let mut next_states = Vec::with_capacity(32 * 8 * 128 * 72);
         let mut actions = Vec::with_capacity(32);
@@ -74,7 +78,7 @@ impl Model {
         );
         loss.get(&[])
     }
-    pub fn train_batch_prioritized(
+    fn train_batch_prioritized(
         &mut self,
         batch_transitions: &[&Transition],
         batch_probabilities: &[f64],
@@ -139,19 +143,19 @@ impl Model {
             abs_td_errors.iter().map(|x| *x as f64).collect::<Vec<_>>(),
         )
     }
-    pub fn copy_control_to_target(&mut self) {
+    fn copy_control_to_target(&mut self) {
         let (_,): (Tensor<i32>,) = self
             .fns
             .copy_control_to_target
             .call(&self.model_bundle.session, ());
     }
-    pub fn save(&self, filepath: &str) {
+    fn save(&self, filepath: &str) {
         let path_arg = Tensor::new(&[])
             .with_values(&[filepath.to_string()])
             .unwrap();
         let (_,): (Tensor<i32>,) = self.fns.save.call(&self.model_bundle.session, (path_arg,));
     }
-    pub fn load(&self, filepath: &str) {
+    fn load(&self, filepath: &str) {
         let path_arg = Tensor::new(&[])
             .with_values(&[filepath.to_string()])
             .unwrap();

@@ -1,4 +1,3 @@
-use super::ReplayMemory;
 use super::SavedTransition;
 use crate::env_thread::agent::Transition;
 mod priority_circ_buffer;
@@ -10,6 +9,8 @@ impl Zero for f64 {
         0.0
     }
 }
+
+const EPSILON: f64 = 0.001;
 
 pub struct ReplayPrioritized {
     transitions: PriorityCircBuffer<f64, Transition>,
@@ -35,17 +36,12 @@ impl ReplayPrioritized {
             None => EPSILON,
         }
     }
-}
-
-const EPSILON: f64 = 0.001;
-
-impl ReplayMemory for ReplayPrioritized {
-    fn with_max_size(max_size: usize) -> ReplayPrioritized {
+    pub fn with_max_size(max_size: usize) -> ReplayPrioritized {
         ReplayPrioritized {
             transitions: PriorityCircBuffer::with_max_size(max_size),
         }
     }
-    fn update_priorities_with_td_errors(
+    pub fn update_priorities_with_td_errors(
         &mut self,
         indices: &[usize],
         abs_td_errors: &[f64],
@@ -56,13 +52,10 @@ impl ReplayMemory for ReplayPrioritized {
             self.transitions.update_priority(*index, priority);
         }
     }
-    fn add_transition(&mut self, transition: Transition) {
+    pub fn add_transition(&mut self, transition: Transition) {
         self.add_transition_with_priority(transition, self.initial_priority());
     }
-    fn sample_batch_prioritized(
-        &self,
-        batch_size: usize,
-    ) -> (Vec<usize>, Vec<f64>, Vec<&Transition>) {
+    pub fn sample_batch(&self, batch_size: usize) -> (Vec<usize>, Vec<f64>, Vec<&Transition>) {
         let mut batch_indices = vec![];
         let mut batch_probabilities = vec![];
         let mut batch_transitions = vec![];
@@ -80,17 +73,17 @@ impl ReplayMemory for ReplayPrioritized {
         }
         (batch_indices, batch_probabilities, batch_transitions)
     }
-    fn min_probability(&self) -> f64 {
+    pub fn min_probability(&self) -> f64 {
         let min_priority = self.transitions.min_priority().unwrap_or(EPSILON);
         min_priority / self.transitions.total_priority()
     }
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.transitions.len()
     }
-    fn save<P: AsRef<Path>>(&self, path: P) {
+    pub fn save<P: AsRef<Path>>(&self, path: P) {
         self.transitions.save(path);
     }
-    fn load<P: AsRef<Path>>(&mut self, path: P) {
+    pub fn load<P: AsRef<Path>>(&mut self, path: P) {
         self.transitions.load(path);
     }
 }

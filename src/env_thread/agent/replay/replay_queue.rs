@@ -1,4 +1,3 @@
-use super::ReplayMemory;
 use super::SavedTransition;
 use crate::env_thread::agent::Transition;
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
@@ -13,20 +12,20 @@ pub struct ReplayQueue {
     max_size: usize,
 }
 
-impl ReplayMemory for ReplayQueue {
-    fn with_max_size(max_size: usize) -> ReplayQueue {
+impl ReplayQueue {
+    pub fn with_max_size(max_size: usize) -> ReplayQueue {
         ReplayQueue {
             transitions: VecDeque::with_capacity(max_size),
             max_size,
         }
     }
-    fn add_transition(&mut self, transition: Transition) {
+    pub fn add_transition(&mut self, transition: Transition) {
         if self.transitions.len() >= self.max_size {
             self.transitions.pop_front();
         }
         self.transitions.push_back(transition);
     }
-    fn sample_batch(&self, batch_size: usize) -> Vec<&Transition> {
+    pub fn sample_batch(&self, batch_size: usize) -> Vec<&Transition> {
         let mut batch = self
             .transitions
             .iter()
@@ -34,10 +33,10 @@ impl ReplayMemory for ReplayQueue {
         batch.shuffle(&mut rand::thread_rng());
         batch
     }
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.transitions.len()
     }
-    fn save<P: AsRef<Path>>(&self, path: P) {
+    pub fn save<P: AsRef<Path>>(&self, path: P) {
         let mut frames = vec![];
         let mut transitions: Vec<SavedTransition> = vec![];
         let mut frame_pointers_to_indices = HashMap::new();
@@ -94,7 +93,7 @@ impl ReplayMemory for ReplayQueue {
             bincode::serialize_into(&mut transitions_file, &transition).unwrap();
         }
     }
-    fn load<P: AsRef<Path>>(&mut self, path: P) {
+    pub fn load<P: AsRef<Path>>(&mut self, path: P) {
         let max_size_file = open_file_buf_read(path.as_ref().join("max_size")).unwrap();
         self.max_size = bincode::deserialize_from(max_size_file).unwrap();
         let mut frames_file = open_file_buf_read(path.as_ref().join("frames")).unwrap();

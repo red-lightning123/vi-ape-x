@@ -1,8 +1,7 @@
 mod training_schedule;
 use training_schedule::TrainingSchedule;
 mod agent;
-use agent::replay::{ReplayMemory, ReplayPrioritized};
-use agent::Agent;
+use agent::{BasicModel, PrioritizedReplayWrapper};
 mod env;
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, Query, ThreadId,
@@ -50,9 +49,9 @@ fn random_action() -> u8 {
 const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
 
-fn step<R: ReplayMemory>(
+fn step(
     env: &mut Env,
-    agent: &mut Agent<R>,
+    agent: &mut PrioritizedReplayWrapper<BasicModel>,
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
@@ -166,7 +165,8 @@ pub fn spawn_env_thread(
             N_EPS_GREEDY_STEPS,
             TARGET_UPDATE_INTERVAL_STEPS,
         );
-        let mut agent: Agent<ReplayPrioritized> = Agent::with_memory_capacity(MEMORY_CAPACITY);
+        const ALPHA: f64 = 0.6;
+        let mut agent = PrioritizedReplayWrapper::wrap(BasicModel::new(), MEMORY_CAPACITY, ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
             if let Ok(query) = query_receiver.try_recv() {
