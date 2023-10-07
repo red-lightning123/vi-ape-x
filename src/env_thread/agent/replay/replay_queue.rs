@@ -13,8 +13,8 @@ pub struct ReplayQueue {
 }
 
 impl ReplayQueue {
-    pub fn with_max_size(max_size: usize) -> ReplayQueue {
-        ReplayQueue {
+    pub fn with_max_size(max_size: usize) -> Self {
+        Self {
             transitions: VecDeque::with_capacity(max_size),
             max_size,
         }

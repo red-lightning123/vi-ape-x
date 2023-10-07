@@ -13,10 +13,10 @@ pub struct MinTree<V> {
 }
 
 impl<V: Infinity + Clone + Copy + PartialOrd> MinTree<V> {
-    pub fn with_leaf_count(leaf_count: usize) -> MinTree<V> {
+    pub fn with_leaf_count(leaf_count: usize) -> Self {
         let leaf_count_prev_power_of_two = leaf_count.next_power_of_two() / 2;
         let tree_len_prev_power_of_two = 2 * leaf_count_prev_power_of_two - 1;
-        MinTree {
+        Self {
             nodes: vec![V::infinity(); tree_len_prev_power_of_two + leaf_count],
             leaf_count,
         }

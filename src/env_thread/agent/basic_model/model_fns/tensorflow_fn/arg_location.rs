@@ -4,8 +4,8 @@ pub struct ArgLocation {
 }
 
 impl ArgLocation {
-    pub fn new(op: Operation) -> ArgLocation {
-        ArgLocation { op }
+    pub fn new(op: Operation) -> Self {
+        Self { op }
     }
     pub fn op(&self) -> &Operation {
         &self.op

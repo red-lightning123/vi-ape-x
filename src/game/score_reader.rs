@@ -12,7 +12,7 @@ pub struct ScoreReader {
 }
 
 impl ScoreReader {
-    pub fn new() -> ScoreReader {
+    pub fn new() -> Self {
         let mut symbol_to_digit_class = HashMap::new();
         let reference_str = include_str!("digits");
         let mut reference_str_it = reference_str.split_whitespace();
@@ -39,7 +39,7 @@ impl ScoreReader {
             }
             symbol_to_digit_class.insert(symbol, class);
         }
-        ScoreReader {
+        Self {
             symbol_to_digit_class,
         }
     }

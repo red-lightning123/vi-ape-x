@@ -5,49 +5,49 @@ use serde::{Deserialize, Serialize};
 pub struct Color2(pub u8, pub u8);
 
 impl Color2 {
-    pub const fn new(a: u8, b: u8) -> Color2 {
-        Color2(a, b)
+    pub const fn new(a: u8, b: u8) -> Self {
+        Self(a, b)
     }
 }
 
 pub struct WColor2(pub u32, pub u32);
 
 impl WColor2 {
-    pub const fn new(a: u32, b: u32) -> WColor2 {
-        WColor2(a, b)
+    pub const fn new(a: u32, b: u32) -> Self {
+        Self(a, b)
     }
 }
 
 impl Zero for WColor2 {
-    fn zero() -> WColor2 {
-        WColor2::new(0, 0)
+    fn zero() -> Self {
+        Self::new(0, 0)
     }
 }
 
 impl std::ops::AddAssign for WColor2 {
-    fn add_assign(&mut self, rhs: WColor2) {
+    fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
         self.1 += rhs.1;
     }
 }
 
 impl std::ops::Div<u32> for WColor2 {
-    type Output = WColor2;
-    fn div(self, rhs: u32) -> WColor2 {
-        WColor2::new(self.0 / rhs, self.1 / rhs)
+    type Output = Self;
+    fn div(self, rhs: u32) -> Self {
+        Self::new(self.0 / rhs, self.1 / rhs)
     }
 }
 
 impl From<Color2> for WColor2 {
-    fn from(c: Color2) -> WColor2 {
-        WColor2::new(c.0.into(), c.1.into())
+    fn from(c: Color2) -> Self {
+        Self::new(c.0.into(), c.1.into())
     }
 }
 
 impl TryFrom<WColor2> for Color2 {
     type Error = std::num::TryFromIntError;
-    fn try_from(c: WColor2) -> Result<Color2, Self::Error> {
-        Ok(Color2::new(c.0.try_into()?, c.1.try_into()?))
+    fn try_from(c: WColor2) -> Result<Self, Self::Error> {
+        Ok(Self::new(c.0.try_into()?, c.1.try_into()?))
     }
 }
 
@@ -117,8 +117,8 @@ pub struct ImageOwned2 {
 }
 
 impl ImageOwned2 {
-    pub fn new(width: u32, height: u32, data: Vec<u8>) -> ImageOwned2 {
-        ImageOwned2 {
+    pub fn new(width: u32, height: u32, data: Vec<u8>) -> Self {
+        Self {
             width,
             height,
             data,
@@ -127,7 +127,7 @@ impl ImageOwned2 {
 }
 
 impl ImageRef for ImageOwned2 {
-    type Owned = ImageOwned2;
+    type Owned = Self;
     type Color = Color2;
     fn get_pixel_color(&self, x: u32, y: u32) -> Self::Color {
         self.as_ref().get_pixel_color(x, y)
@@ -142,8 +142,8 @@ impl ImageRef for ImageOwned2 {
 
 impl ImageOwned for ImageOwned2 {
     type Ref<'a> = ImageRef2<'a>;
-    fn zeroed(width: u32, height: u32) -> ImageOwned2 {
-        ImageOwned2 {
+    fn zeroed(width: u32, height: u32) -> Self {
+        Self {
             width,
             height,
             data: vec![0; (2 * width * height) as usize],

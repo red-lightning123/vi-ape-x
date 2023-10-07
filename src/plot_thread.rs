@@ -26,8 +26,8 @@ struct Plot {
 }
 
 impl Plot {
-    fn new() -> Plot {
-        Plot {
+    fn new() -> Self {
+        Self {
             points: vec![],
             current_n: 0,
             current_sum: 0.0,
@@ -87,8 +87,8 @@ impl Loop {
     fn new(
         receiver: Receiver<PlotThreadMessage>,
         master_thread_sender: Sender<MasterThreadMessage>,
-    ) -> Loop {
-        Loop {
+    ) -> Self {
+        Self {
             receiver,
             master_thread_sender,
             plot: Plot::new(),

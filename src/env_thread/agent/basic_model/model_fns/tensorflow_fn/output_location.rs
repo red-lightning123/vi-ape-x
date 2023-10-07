@@ -5,8 +5,8 @@ pub struct OutputLocation {
 }
 
 impl OutputLocation {
-    pub fn new(op: Operation, index: i32) -> OutputLocation {
-        OutputLocation { op, index }
+    pub fn new(op: Operation, index: i32) -> Self {
+        Self { op, index }
     }
     pub fn op(&self) -> &Operation {
         &self.op

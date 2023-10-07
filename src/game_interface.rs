@@ -94,12 +94,12 @@ struct XShmSeg {
 }
 
 impl XShmSeg {
-    fn new(conn: &XCBConnection, len: usize) -> XShmSeg {
+    fn new(conn: &XCBConnection, len: usize) -> Self {
         let shmid = unsafe { libc::shmget(libc::IPC_PRIVATE, len, libc::IPC_CREAT | 0o777) };
         let address = unsafe { libc::shmat(shmid, std::ptr::null(), 0) };
         let x_seg = conn.generate_id().unwrap();
         conn.shm_attach(x_seg, shmid as u32, false).unwrap();
-        XShmSeg { address, x_seg }
+        Self { address, x_seg }
     }
     fn address(&self) -> *mut core::ffi::c_void {
         self.address
@@ -127,8 +127,8 @@ impl Window {
         dims: xproto::GetGeometryReply,
         attribs: xproto::GetWindowAttributesReply,
         image_len: usize,
-    ) -> Window {
-        Window {
+    ) -> Self {
+        Self {
             handle,
             dims,
             attribs,
@@ -180,7 +180,7 @@ impl VSyncData {
         screen_num: i32,
         root_win: u32,
         ref_win: &Window,
-    ) -> VSyncData {
+    ) -> Self {
         let win = conn.generate_id().unwrap();
         conn.create_window(
             ref_win.depth(),
@@ -200,7 +200,7 @@ impl VSyncData {
         let mut glx_context = display.create_glx_context(unsafe { *fb_configs });
         unsafe { x11::xlib::XFree(fb_configs.cast::<core::ffi::c_void>()) };
         display.make_glx_context_current(u64::from(win), &mut glx_context);
-        VSyncData { glx_context, win }
+        Self { glx_context, win }
     }
     fn close(self, display: &mut X11Display, conn: &XCBConnection) {
         display.destroy_glx_context(self.glx_context);

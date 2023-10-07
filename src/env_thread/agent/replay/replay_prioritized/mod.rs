@@ -36,8 +36,8 @@ impl ReplayPrioritized {
             None => EPSILON,
         }
     }
-    pub fn with_max_size(max_size: usize) -> ReplayPrioritized {
-        ReplayPrioritized {
+    pub fn with_max_size(max_size: usize) -> Self {
+        Self {
             transitions: PriorityCircBuffer::with_max_size(max_size),
         }
     }

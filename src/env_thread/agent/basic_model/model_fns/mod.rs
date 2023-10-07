@@ -12,8 +12,8 @@ pub struct ModelFns {
 }
 
 impl ModelFns {
-    pub fn new(model_bundle: &SavedModelBundle, graph: &Graph) -> ModelFns {
-        ModelFns {
+    pub fn new(model_bundle: &SavedModelBundle, graph: &Graph) -> Self {
+        Self {
             best_action: TensorflowFn::new(
                 model_bundle,
                 graph,

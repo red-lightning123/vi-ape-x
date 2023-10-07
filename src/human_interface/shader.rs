@@ -15,14 +15,14 @@ pub enum ShaderType {
 impl ShaderType {
     fn as_raw(&self) -> u32 {
         match self {
-            ShaderType::Vertex => glow::VERTEX_SHADER,
-            ShaderType::Fragment => glow::FRAGMENT_SHADER,
+            Self::Vertex => glow::VERTEX_SHADER,
+            Self::Fragment => glow::FRAGMENT_SHADER,
         }
     }
     pub fn name(&self) -> &str {
         match self {
-            ShaderType::Vertex => "vertex",
-            ShaderType::Fragment => "fragment",
+            Self::Vertex => "vertex",
+            Self::Fragment => "fragment",
         }
     }
 }
@@ -33,8 +33,8 @@ impl std::fmt::Display for ShaderType {
             f,
             "{}",
             match self {
-                ShaderType::Vertex => "vertex",
-                ShaderType::Fragment => "fragment",
+                Self::Vertex => "vertex",
+                Self::Fragment => "fragment",
             }
         )
     }
@@ -48,10 +48,7 @@ pub enum ProgramCreationError {
 }
 
 impl Program {
-    pub fn new(
-        gl: &glow::Context,
-        source: &ProgramSource,
-    ) -> Result<Program, ProgramCreationError> {
+    pub fn new(gl: &glow::Context, source: &ProgramSource) -> Result<Self, ProgramCreationError> {
         let shader_program = unsafe { gl.create_program().map_err(ProgramCreationError::GlError)? };
         if let Some(ref source) = source.vertex {
             let vertex_shader = Self::build_shader(gl, ShaderType::Vertex, source)?;
@@ -62,7 +59,7 @@ impl Program {
             let fragment_shader = Self::build_shader(gl, ShaderType::Fragment, source)?;
             unsafe { gl.attach_shader(shader_program, fragment_shader) };
         }
-        Ok(Program(Self::link(gl, shader_program)?))
+        Ok(Self(Self::link(gl, shader_program)?))
     }
 
     fn build_shader(
@@ -130,19 +127,19 @@ pub struct ProgramSource {
 }
 
 impl ProgramSource {
-    pub fn new() -> ProgramSource {
-        ProgramSource {
+    pub fn new() -> Self {
+        Self {
             vertex: None,
             fragment: None,
         }
     }
 
-    pub fn vertex(mut self, source: String) -> ProgramSource {
+    pub fn vertex(mut self, source: String) -> Self {
         self.vertex = Some(source);
         self
     }
 
-    pub fn fragment(mut self, source: String) -> ProgramSource {
+    pub fn fragment(mut self, source: String) -> Self {
         self.fragment = Some(source);
         self
     }

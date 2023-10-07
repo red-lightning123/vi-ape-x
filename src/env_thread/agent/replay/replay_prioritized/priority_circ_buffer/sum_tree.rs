@@ -13,10 +13,10 @@ pub struct SumTree<V> {
 }
 
 impl<V: Zero + Clone + Copy + std::ops::Add<Output = V>> SumTree<V> {
-    pub fn with_leaf_count(leaf_count: usize) -> SumTree<V> {
+    pub fn with_leaf_count(leaf_count: usize) -> Self {
         let leaf_count_prev_power_of_two = leaf_count.next_power_of_two() / 2;
         let tree_len_prev_power_of_two = 2 * leaf_count_prev_power_of_two - 1;
-        SumTree {
+        Self {
             nodes: vec![V::zero(); tree_len_prev_power_of_two + leaf_count],
             leaf_count,
         }

@@ -21,13 +21,13 @@ pub struct BasicModel {
 }
 
 impl BasicModel {
-    pub fn new() -> BasicModel {
+    pub fn new() -> Self {
         let mut graph = Graph::new();
         let model_bundle =
             SavedModelBundle::load(&SessionOptions::new(), ["serve"], &mut graph, "model")
                 .expect("Couldn't load model");
         let fns = ModelFns::new(&model_bundle, &graph);
-        BasicModel { model_bundle, fns }
+        Self { model_bundle, fns }
     }
 }
 

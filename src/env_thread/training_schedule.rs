@@ -19,8 +19,8 @@ impl TrainingSchedule {
         n_eps_random_steps: u32,
         n_eps_greedy_steps: u32,
         target_update_interval_steps: u32,
-    ) -> TrainingSchedule {
-        TrainingSchedule {
+    ) -> Self {
+        Self {
             n_step: 0,
             eps_min,
             eps_max,

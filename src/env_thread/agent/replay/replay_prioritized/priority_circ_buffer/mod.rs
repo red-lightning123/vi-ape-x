@@ -25,10 +25,10 @@ pub struct PriorityCircBuffer<P, V> {
 }
 
 impl<P: Priority, V> PriorityCircBuffer<P, V> {
-    pub fn with_max_size(max_size: usize) -> PriorityCircBuffer<P, V> {
+    pub fn with_max_size(max_size: usize) -> Self {
         let priorities = SumTree::with_leaf_count(max_size);
         let first_priority_leaf = priorities.first_leaf();
-        PriorityCircBuffer {
+        Self {
             priorities,
             priorities_min: MinTree::with_leaf_count(max_size),
             priorities_max: MaxTree::with_leaf_count(max_size),

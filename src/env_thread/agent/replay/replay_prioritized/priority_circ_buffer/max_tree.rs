@@ -13,10 +13,10 @@ pub struct MaxTree<V> {
 }
 
 impl<V: NegativeInfinity + Clone + Copy + PartialOrd> MaxTree<V> {
-    pub fn with_leaf_count(leaf_count: usize) -> MaxTree<V> {
+    pub fn with_leaf_count(leaf_count: usize) -> Self {
         let leaf_count_prev_power_of_two = leaf_count.next_power_of_two() / 2;
         let tree_len_prev_power_of_two = 2 * leaf_count_prev_power_of_two - 1;
-        MaxTree {
+        Self {
             nodes: vec![V::negative_infinity(); tree_len_prev_power_of_two + leaf_count],
             leaf_count,
         }

@@ -27,12 +27,12 @@ impl Env {
         receiver: Receiver<EnvThreadMessage>,
         game_thread_sender: Sender<GameThreadMessage>,
         plot_thread_sender: Sender<PlotThreadMessage>,
-    ) -> Result<Env, StepError> {
+    ) -> Result<Self, StepError> {
         let mut waiting_hold = false;
         let (frame, score) = Self::raw_wait_for_next_frame(&receiver, &mut waiting_hold)?;
         let frame = Rc::new(frame);
         let state = Self::initial_state_from_frame(frame);
-        Ok(Env {
+        Ok(Self {
             state,
             score,
             receiver,

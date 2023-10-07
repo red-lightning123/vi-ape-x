@@ -11,8 +11,8 @@ pub struct PrioritizedReplayWrapper<T> {
 }
 
 impl<T: Model> PrioritizedReplayWrapper<T> {
-    pub fn wrap(model: T, memory_capacity: usize, alpha: f64) -> PrioritizedReplayWrapper<T> {
-        PrioritizedReplayWrapper {
+    pub fn wrap(model: T, memory_capacity: usize, alpha: f64) -> Self {
+        Self {
             model,
             memory: ReplayPrioritized::with_max_size(memory_capacity),
             alpha,

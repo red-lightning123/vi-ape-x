@@ -12,7 +12,7 @@ pub struct MinNode<P>(Option<P>);
 
 impl<P> Infinity for MinNode<P> {
     fn infinity() -> Self {
-        MinNode(None)
+        Self(None)
     }
 }
 
@@ -45,7 +45,7 @@ impl<P> From<MinNode<P>> for Option<P> {
 
 impl<P> From<P> for MinNode<P> {
     fn from(value: P) -> Self {
-        MinNode(Some(value))
+        Self(Some(value))
     }
 }
 
@@ -54,7 +54,7 @@ pub struct MaxNode<P>(Option<P>);
 
 impl<P> NegativeInfinity for MaxNode<P> {
     fn negative_infinity() -> Self {
-        MaxNode(None)
+        Self(None)
     }
 }
 
@@ -87,6 +87,6 @@ impl<P> From<MaxNode<P>> for Option<P> {
 
 impl<P> From<P> for MaxNode<P> {
     fn from(value: P) -> Self {
-        MaxNode(Some(value))
+        Self(Some(value))
     }
 }

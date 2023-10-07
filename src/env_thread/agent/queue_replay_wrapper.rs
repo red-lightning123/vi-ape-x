@@ -10,8 +10,8 @@ pub struct QueueReplayWrapper<T> {
 }
 
 impl<T: Model> QueueReplayWrapper<T> {
-    pub fn wrap(model: T, memory_capacity: usize) -> QueueReplayWrapper<T> {
-        QueueReplayWrapper {
+    pub fn wrap(model: T, memory_capacity: usize) -> Self {
+        Self {
             model,
             memory: ReplayQueue::with_max_size(memory_capacity),
         }
