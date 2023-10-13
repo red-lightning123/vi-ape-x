@@ -2,30 +2,50 @@ import tensorrt
 import tensorflow as tf
 from tensorflow import keras
 
-def nn2013(n_actions):
-    inputs = keras.layers.Input(shape=(8, 128, 72))
+def transition_inputs():
+    return keras.layers.Input(shape=(8, 128, 72))
+
+def preprocessed_inputs(inputs):
     normalized = keras.layers.Lambda(lambda x : x / 255.0)(inputs)
     transpose = keras.layers.Permute((2, 3, 1))(normalized)
-    conv_1 = keras.layers.Conv2D(16, 8, strides=4, activation="relu")(transpose)
+    return transpose
+
+def nn2013_conv_features(inputs):
+    conv_1 = keras.layers.Conv2D(16, 8, strides=4, activation="relu")(inputs)
     conv_2 = keras.layers.Conv2D(32, 4, strides=2, activation="relu")(conv_1)
     flattened = keras.layers.Flatten()(conv_2)
-    hidden = keras.layers.Dense(256, activation="relu")(flattened)
-    outputs = keras.layers.Dense(n_actions)(hidden)
-    return inputs, outputs
+    return flattened
 
-def nn2015(n_actions):
-    inputs = keras.layers.Input(shape=(8, 128, 72))
-    normalized = keras.layers.Lambda(lambda x : x / 255.0)(inputs)
-    transpose = keras.layers.Permute((2, 3, 1))(normalized)
-    conv_1 = keras.layers.Conv2D(32, 8, strides=4, activation="relu")(transpose)
+def nn2015_conv_features(inputs):
+    conv_1 = keras.layers.Conv2D(32, 8, strides=4, activation="relu")(inputs)
     conv_2 = keras.layers.Conv2D(64, 4, strides=2, activation="relu")(conv_1)
     conv_3 = keras.layers.Conv2D(64, 3, strides=1, activation="relu")(conv_2)
     flattened = keras.layers.Flatten()(conv_3)
-    hidden = keras.layers.Dense(512, activation="relu")(flattened)
-    outputs = keras.layers.Dense(n_actions)(hidden)
-    return inputs, outputs
+    return flattened
 
-nn = nn2015
+def nn2013_q_stream(conv_features, n_actions):
+    hidden = keras.layers.Dense(256, activation="relu")(conv_features)
+    q_values = keras.layers.Dense(n_actions)(hidden)
+    return q_values
+
+def nn2015_q_stream(conv_features, n_actions):
+    hidden = keras.layers.Dense(512, activation="relu")(conv_features)
+    q_values = keras.layers.Dense(n_actions)(hidden)
+    return q_values
+
+def combined_dueling_streams(value, advantages):
+    advantage_avg = tf.math.reduce_mean(advantages, axis=1)
+    shifted_advantages = advantages - tf.expand_dims(advantage_avg, axis=1)
+    q_values = value + shifted_advantages
+    return q_values
+
+def dueling_q_stream(conv_features, n_actions):
+    hidden_value = keras.layers.Dense(512, activation="relu")(conv_features)
+    hidden_advantages = keras.layers.Dense(512, activation="relu")(conv_features)
+    value = keras.layers.Dense(1)(hidden_value)
+    advantages = keras.layers.Dense(n_actions)(hidden_advantages)
+    q_values = combined_dueling_streams(value, advantages)
+    return q_values
 
 LEARNING_RATE = 0.000025
 
@@ -39,7 +59,10 @@ else:
 class Model(tf.Module):
     def __init__(self):
         self.n_actions = n_actions
-        inputs, outputs = nn(self.n_actions)
+        inputs = transition_inputs()
+        preprocessed = preprocessed_inputs(inputs)
+        conv_features = nn2015_conv_features(preprocessed)
+        outputs = dueling_q_stream(conv_features, self.n_actions)
         learning_rate = LEARNING_RATE
         self.optimizer = keras.optimizers.Adam(learning_rate=learning_rate, jit_compile=False)
         self.loss = keras.losses.Huber()
