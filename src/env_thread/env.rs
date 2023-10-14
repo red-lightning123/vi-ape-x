@@ -17,6 +17,21 @@ pub struct Env {
     n_step: u32,
 }
 
+impl Env {
+    fn is_episode_terminated(score: u32, next_score: u32) -> bool {
+        // In theory, the score should only decrease once the game is
+        // over, since the player never moves backward. A reasonable
+        // termination metric would therefore be score > next_score.
+        // However, due to a subtle glitch, collisions with platforms
+        // actually can push the agent backward narrowly. Sometimes
+        // this leads to fluctations in the score.
+        // So instead we check if next_score is smaller than score by a
+        // sensible threshold
+        const TERMINATION_SCORE_THRESHOLD: u32 = 10;
+        score >= next_score + TERMINATION_SCORE_THRESHOLD
+    }
+}
+
 pub enum StepError {
     WaitForHoldRequest,
     BadMessage,
@@ -66,7 +81,7 @@ impl Env {
             .unwrap();
         let (next_frame, next_score) = self.wait_for_next_frame()?;
         let next_frame = Rc::new(next_frame);
-        let terminated = score > next_score;
+        let terminated = Self::is_episode_terminated(score, next_score);
 
         if terminated {
             self.send_episode_score_to_plot_thread(score);
