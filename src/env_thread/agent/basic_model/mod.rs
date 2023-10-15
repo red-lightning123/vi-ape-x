@@ -1,8 +1,9 @@
-use super::model::Model;
+use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
 use super::{State, Transition};
 mod model_fns;
 use crate::ImageOwned;
 use model_fns::ModelFns;
+use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};
 
 fn state_to_pixels(state: &State) -> Vec<u8> {
@@ -31,7 +32,7 @@ impl BasicModel {
     }
 }
 
-impl Model for BasicModel {
+impl Actor for BasicModel {
     fn best_action(&self, state: &State) -> u8 {
         let state_values = state_to_pixels(state);
         let state_arg = Tensor::new(&[8, 128, 72])
@@ -44,6 +45,9 @@ impl Model for BasicModel {
             .call(&self.model_bundle.session, (state_arg,));
         action.get(&[]) as u8
     }
+}
+
+impl BasicLearner for BasicModel {
     fn train_batch(&mut self, batch: &[&Transition]) -> f32 {
         let mut states = Vec::with_capacity(32 * 8 * 128 * 72);
         let mut next_states = Vec::with_capacity(32 * 8 * 128 * 72);
@@ -78,6 +82,9 @@ impl Model for BasicModel {
         );
         loss.get(&[])
     }
+}
+
+impl PrioritizedLearner for BasicModel {
     fn train_batch_prioritized(
         &mut self,
         batch_transitions: &[&Transition],
@@ -143,22 +150,33 @@ impl Model for BasicModel {
             abs_td_errors.iter().map(|x| *x as f64).collect::<Vec<_>>(),
         )
     }
+}
+
+impl TargetNet for BasicModel {
     fn copy_control_to_target(&mut self) {
         let (_,): (Tensor<i32>,) = self
             .fns
             .copy_control_to_target
             .call(&self.model_bundle.session, ());
     }
-    fn save(&self, filepath: &str) {
-        let path_arg = Tensor::new(&[])
-            .with_values(&[filepath.to_string()])
-            .unwrap();
+}
+
+impl BasicModel {
+    fn save_internal(&self, filepath: String) {
+        let path_arg = Tensor::new(&[]).with_values(&[filepath]).unwrap();
         let (_,): (Tensor<i32>,) = self.fns.save.call(&self.model_bundle.session, (path_arg,));
     }
-    fn load(&self, filepath: &str) {
-        let path_arg = Tensor::new(&[])
-            .with_values(&[filepath.to_string()])
-            .unwrap();
+    fn load_internal(&self, filepath: String) {
+        let path_arg = Tensor::new(&[]).with_values(&[filepath]).unwrap();
         let (_,): (Tensor<i32>,) = self.fns.load.call(&self.model_bundle.session, (path_arg,));
+    }
+}
+
+impl Persistable for BasicModel {
+    fn save<P: AsRef<Path>>(&self, path: P) {
+        self.save_internal(path.as_ref().to_str().unwrap().to_string());
+    }
+    fn load<P: AsRef<Path>>(&mut self, path: P) {
+        self.load_internal(path.as_ref().to_str().unwrap().to_string());
     }
 }

@@ -1,6 +1,7 @@
 mod training_schedule;
 use training_schedule::TrainingSchedule;
 mod agent;
+use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
 mod env;
 use crate::{

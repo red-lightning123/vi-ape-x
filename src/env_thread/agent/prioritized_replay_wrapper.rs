@@ -1,5 +1,5 @@
 use super::replay::ReplayPrioritized;
-use super::Model;
+use super::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use super::{State, Transition};
 use std::fs;
 use std::path::Path;
@@ -10,7 +10,7 @@ pub struct PrioritizedReplayWrapper<T> {
     alpha: f64,
 }
 
-impl<T: Model> PrioritizedReplayWrapper<T> {
+impl<T> PrioritizedReplayWrapper<T> {
     pub fn wrap(model: T, memory_capacity: usize, alpha: f64) -> Self {
         Self {
             model,
@@ -18,12 +18,18 @@ impl<T: Model> PrioritizedReplayWrapper<T> {
             alpha,
         }
     }
-    pub fn best_action(&self, state: &State) -> u8 {
-        self.model.best_action(state)
-    }
     pub fn remember(&mut self, transition: Transition) {
         self.memory.add_transition(transition);
     }
+}
+
+impl<T: Actor> Actor for PrioritizedReplayWrapper<T> {
+    fn best_action(&self, state: &State) -> u8 {
+        self.model.best_action(state)
+    }
+}
+
+impl<T: PrioritizedLearner> PrioritizedReplayWrapper<T> {
     pub fn train_step(&mut self, beta: f64) -> Option<f32> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {
@@ -47,19 +53,25 @@ impl<T: Model> PrioritizedReplayWrapper<T> {
             None
         }
     }
-    pub fn copy_control_to_target(&mut self) {
+}
+
+impl<T: TargetNet> TargetNet for PrioritizedReplayWrapper<T> {
+    fn copy_control_to_target(&mut self) {
         self.model.copy_control_to_target();
     }
-    pub fn save<P: AsRef<Path>>(&self, path: P) {
+}
+
+impl<T: Persistable> Persistable for PrioritizedReplayWrapper<T> {
+    fn save<P: AsRef<Path>>(&self, path: P) {
         let path = path.as_ref();
-        self.model.save(path.join("model_vars").to_str().unwrap());
+        self.model.save(path.join("model_vars"));
         let memory_path = path.join("memory");
         fs::create_dir_all(&memory_path).unwrap();
         self.memory.save(memory_path);
     }
-    pub fn load<P: AsRef<Path>>(&mut self, path: P) {
+    fn load<P: AsRef<Path>>(&mut self, path: P) {
         let path = path.as_ref();
-        self.model.load(path.join("model_vars").to_str().unwrap());
+        self.model.load(path.join("model_vars"));
         self.memory.load(path.join("memory"));
     }
 }
