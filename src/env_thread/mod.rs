@@ -47,6 +47,19 @@ fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())
 }
 
+fn send_episode_score_to_plot_thread(
+    sender: &Sender<PlotThreadMessage>,
+    score: u32,
+    schedule: &TrainingSchedule,
+) {
+    sender
+        .send(PlotThreadMessage::Datum((
+            f64::from(schedule.n_step()),
+            f64::from(score),
+        )))
+        .unwrap();
+}
+
 const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
 
@@ -56,6 +69,7 @@ fn step(
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
+    plot_thread_sender: &Sender<PlotThreadMessage>,
 ) -> bool {
     let state = env.state();
     let concated_state = concat_state_frames(&state);
@@ -86,7 +100,11 @@ fn step(
         }
         Err(StepError::BadMessage) => panic!("{THREAD_NAME} thread: bad message"),
     };
-    if let Some(transition) = env.pop_transition() {
+    if let Some((transition, score)) = env.pop_transition() {
+        let terminated = transition.4;
+        if terminated {
+            send_episode_score_to_plot_thread(plot_thread_sender, score, schedule);
+        }
         agent.remember(transition);
     }
     if !schedule.is_on_eps_random() {
@@ -202,11 +220,7 @@ pub fn spawn_env_thread(
                             eprintln!("{THREAD_NAME} thread: {:?} while already held", message);
                         }
                         MasterMessage::Resume => {
-                            match Env::new(
-                                receiver.clone(),
-                                game_thread_sender.clone(),
-                                plot_thread_sender.clone(),
-                            ) {
+                            match Env::new(receiver.clone(), game_thread_sender.clone()) {
                                 Ok(env) => {
                                     mode = ThreadMode::Running(env);
                                 }
@@ -234,6 +248,7 @@ pub fn spawn_env_thread(
                         &mut schedule,
                         &master_thread_sender,
                         &ui_thread_sender,
+                        &plot_thread_sender,
                     );
                     if should_hold {
                         mode = ThreadMode::Held;
