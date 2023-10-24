@@ -47,6 +47,15 @@ def dueling_q_stream(conv_features, n_actions):
     q_values = combined_dueling_streams(value, advantages)
     return q_values
 
+GRAD_NORM_CLIPPING = 10
+
+# Whether to rescale the gradients by 1 / sqrt(2), as suggested in the
+# dueling dqn paper. Disabled by default.
+# NOTE: Most implementations of dueling dqn seem to ignore this step,
+# which makes it hard to verify how it should be done. Therefore, the
+# interpretation of "rescale" chosen here is not necessarily correct.
+DUELING_GRAD_WEIGHTING = False
+
 LEARNING_RATE = 0.000025
 
 JUMP = False
@@ -64,7 +73,7 @@ class Model(tf.Module):
         conv_features = nn2015_conv_features(preprocessed)
         outputs = dueling_q_stream(conv_features, self.n_actions)
         learning_rate = LEARNING_RATE
-        self.optimizer = keras.optimizers.Adam(learning_rate=learning_rate, jit_compile=False)
+        self.optimizer = keras.optimizers.Adam(learning_rate=learning_rate, jit_compile=False, clipnorm=GRAD_NORM_CLIPPING)
         self.loss = keras.losses.Huber()
         self.model = keras.Model(inputs=inputs, outputs=outputs)
     @tf.function
@@ -78,6 +87,8 @@ class Model(tf.Module):
             relevant_qvals = tf.reduce_sum(tf.multiply(predicted_qvals, action_masks), axis=1)
             loss_value = self.loss(updated_qvals, relevant_qvals)
         grads = tape.gradient(loss_value, self.model.trainable_weights)
+        if DUELING_GRAD_WEIGHTING:
+            grads = grads / sqrt(2)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         return loss_value
     @tf.function
@@ -94,6 +105,8 @@ class Model(tf.Module):
             td_errors_expanded = tf.expand_dims(td_errors, axis=-1)
             loss_value = self.loss(td_errors_expanded, 0, sample_weight = normalized_importance_sampling_weights)
         grads = tape.gradient(loss_value, self.model.trainable_weights)
+        if DUELING_GRAD_WEIGHTING:
+            grads = grads / sqrt(2)
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         return loss_value, tf.abs(td_errors)
     @tf.function
