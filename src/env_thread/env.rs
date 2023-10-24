@@ -22,7 +22,7 @@ impl Env {
         // termination metric would therefore be score > next_score.
         // However, due to a subtle glitch, collisions with platforms
         // actually can push the agent backward narrowly. Sometimes
-        // this leads to fluctations in the score.
+        // this leads to fluctuations in the score.
         // So instead we check if next_score is smaller than score by a
         // sensible threshold
         const TERMINATION_SCORE_THRESHOLD: u32 = 10;
