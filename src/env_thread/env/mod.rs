@@ -1,12 +1,14 @@
+mod frame_stack;
+use frame_stack::FrameStack;
+
 use super::{EnvThreadMessage, State, Transition};
 use crate::GameThreadMessage;
 use crate::ImageOwned2;
 use crossbeam_channel::{Receiver, Sender};
 use std::collections::VecDeque;
-use std::rc::Rc;
 
 pub struct Env {
-    state: VecDeque<Rc<ImageOwned2>>,
+    state: FrameStack,
     score: u32,
     receiver: Receiver<EnvThreadMessage>,
     game_thread_sender: Sender<GameThreadMessage>,
@@ -42,8 +44,7 @@ impl Env {
     ) -> Result<Self, StepError> {
         let mut waiting_hold = false;
         let (frame, score) = Self::raw_wait_for_next_frame(&receiver, &mut waiting_hold)?;
-        let frame = Rc::new(frame);
-        let state = Self::initial_state_from_frame(frame);
+        let state = FrameStack::from(frame);
         Ok(Self {
             state,
             score,
@@ -54,30 +55,22 @@ impl Env {
             waiting_hold,
         })
     }
-    fn initial_state_from_frame(frame_1: Rc<ImageOwned2>) -> VecDeque<Rc<ImageOwned2>> {
-        let frame_2 = Rc::clone(&frame_1);
-        let frame_3 = Rc::clone(&frame_1);
-        let frame_4 = Rc::clone(&frame_1);
-        VecDeque::from([frame_1, frame_2, frame_3, frame_4])
-    }
     pub fn step(&mut self, action: u8) -> Result<(), StepError> {
-        let state_slice = Self::state_as_slice(&mut self.state).clone();
+        let state_slice = self.state.as_slice().clone();
         let score = self.score;
         self.game_thread_sender
             .send(GameThreadMessage::Action(action))
             .unwrap();
         let (next_frame, next_score) = self.wait_for_next_frame()?;
-        let next_frame = Rc::new(next_frame);
         let terminated = Self::is_episode_terminated(score, next_score);
 
         self.score = next_score;
         if terminated {
-            self.state = Self::initial_state_from_frame(next_frame);
+            self.state = FrameStack::from(next_frame);
         } else {
-            self.state.pop_front();
-            self.state.push_back(Rc::clone(&next_frame));
+            self.state.push(next_frame);
         }
-        let next_state_slice = Self::state_as_slice(&mut self.state).clone();
+        let next_state_slice = self.state.as_slice().clone();
         let reward = if terminated {
             0.0
         } else {
@@ -129,8 +122,7 @@ impl Env {
             .unwrap();
         self.next_game()?;
         let (frame, score) = self.wait_for_next_frame()?;
-        let frame = Rc::new(frame);
-        self.state = Self::initial_state_from_frame(frame);
+        self.state = FrameStack::from(frame);
         self.score = score;
         self.truncation_timer = 0;
         Ok(())
@@ -142,13 +134,12 @@ impl Env {
             Ok(())
         }
     }
-    fn state_as_slice(state: &mut VecDeque<Rc<ImageOwned2>>) -> &State {
-        <&State>::try_from(&*state.make_contiguous()).unwrap()
-    }
     pub fn state(&self) -> State {
-        <&State>::try_from(&*self.state.clone().make_contiguous())
-            .unwrap()
-            .clone()
+        // Two clones are needed here. The first casts the &StateStack
+        // into a &mut StateStack, because as_slice takes &mut self
+        // while this function's signature requires &self. The second
+        // clone extracts an owned State from the resulting &State
+        self.state.clone().as_slice().clone()
     }
     pub fn pop_transition(&mut self) -> Option<(Transition, u32)> {
         self.pending_transitions.pop_front()
