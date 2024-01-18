@@ -1,5 +1,8 @@
 mod frame_stack;
 use frame_stack::FrameStack;
+mod message_bridge;
+pub use message_bridge::StepError;
+use message_bridge::{MessageBridge, Reply, Request};
 
 use super::{EnvThreadMessage, State, Transition};
 use crate::GameThreadMessage;
@@ -8,10 +11,9 @@ use crossbeam_channel::{Receiver, Sender};
 use std::collections::VecDeque;
 
 pub struct Env {
+    bridge: MessageBridge,
     state: FrameStack,
     score: u32,
-    receiver: Receiver<EnvThreadMessage>,
-    game_thread_sender: Sender<GameThreadMessage>,
     pending_transitions: VecDeque<(Transition, u32)>,
     truncation_timer: u32,
     waiting_hold: bool,
@@ -32,36 +34,31 @@ impl Env {
     }
 }
 
-pub enum StepError {
-    WaitForHoldRequest,
-    BadMessage,
-}
-
 impl Env {
     pub fn new(
         receiver: Receiver<EnvThreadMessage>,
         game_thread_sender: Sender<GameThreadMessage>,
     ) -> Result<Self, StepError> {
-        let mut waiting_hold = false;
-        let (frame, score) = Self::raw_wait_for_next_frame(&receiver, &mut waiting_hold)?;
+        let (bridge, reply) = MessageBridge::new(receiver, game_thread_sender)?;
+        let Reply {
+            frame,
+            score,
+            received_wait_for_hold,
+        } = reply;
         let state = FrameStack::from(frame);
         Ok(Self {
+            bridge,
             state,
             score,
-            receiver,
-            game_thread_sender,
             pending_transitions: VecDeque::new(),
             truncation_timer: 0,
-            waiting_hold,
+            waiting_hold: received_wait_for_hold,
         })
     }
     pub fn step(&mut self, action: u8) -> Result<(), StepError> {
         let state_slice = self.state.as_slice().clone();
         let score = self.score;
-        self.game_thread_sender
-            .send(GameThreadMessage::Action(action))
-            .unwrap();
-        let (next_frame, next_score) = self.wait_for_next_frame()?;
+        let (next_frame, next_score) = self.send(Request::Action(action))?;
         let terminated = Self::is_episode_terminated(score, next_score);
 
         self.score = next_score;
@@ -95,33 +92,13 @@ impl Env {
         }
         Ok(())
     }
-    fn wait_for_next_frame(&mut self) -> Result<(ImageOwned2, u32), StepError> {
-        Self::raw_wait_for_next_frame(&self.receiver, &mut self.waiting_hold)
-    }
-    fn raw_wait_for_next_frame(
-        receiver: &Receiver<EnvThreadMessage>,
-        waiting_hold: &mut bool,
-    ) -> Result<(ImageOwned2, u32), StepError> {
-        loop {
-            match receiver.recv().unwrap() {
-                EnvThreadMessage::Frame(message) => return Ok(message),
-                EnvThreadMessage::Master(_) => return Err(StepError::BadMessage),
-                EnvThreadMessage::WaitForHold => {
-                    *waiting_hold = true;
-                }
-            }
-        }
-    }
     fn truncation_timer_exceeded_threshold(&self) -> bool {
         const TIMER_THRESHOLD: u32 = 200;
         self.truncation_timer >= TIMER_THRESHOLD
     }
     fn truncate(&mut self) -> Result<(), StepError> {
-        self.game_thread_sender
-            .send(GameThreadMessage::Truncation)
-            .unwrap();
         self.next_game()?;
-        let (frame, score) = self.wait_for_next_frame()?;
+        let (frame, score) = self.send(Request::Truncation)?;
         self.state = FrameStack::from(frame);
         self.score = score;
         self.truncation_timer = 0;
@@ -134,6 +111,17 @@ impl Env {
             Ok(())
         }
     }
+    fn send(&mut self, request: Request) -> Result<(ImageOwned2, u32), StepError> {
+        let Reply {
+            frame,
+            score,
+            received_wait_for_hold,
+        } = self.bridge.send(request)?;
+        if received_wait_for_hold {
+            self.waiting_hold = true;
+        }
+        Ok((frame, score))
+    }
     pub fn state(&self) -> State {
         // Two clones are needed here. The first casts the &StateStack
         // into a &mut StateStack, because as_slice takes &mut self
@@ -145,11 +133,6 @@ impl Env {
         self.pending_transitions.pop_front()
     }
     pub const fn n_actions() -> u8 {
-        const JUMP_ENABLED: bool = false;
-        if JUMP_ENABLED {
-            3
-        } else {
-            2
-        }
+        MessageBridge::n_actions()
     }
 }
