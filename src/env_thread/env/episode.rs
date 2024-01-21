@@ -46,9 +46,7 @@ impl Episode {
         let state_slice = self.state.as_slice().clone();
         let score = self.score;
         let terminated = Self::terminated(score, next_score);
-        // && !terminated is technically not necessary due to the nature of the game but is here
-        // for generality
-        if score == next_score && !terminated {
+        if score == next_score {
             self.truncation_timer += 1;
         } else {
             self.truncation_timer = 0;
