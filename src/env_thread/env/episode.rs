@@ -46,6 +46,13 @@ impl Episode {
         let state_slice = self.state.as_slice().clone();
         let score = self.score;
         let terminated = Self::terminated(score, next_score);
+        // && !terminated is technically not necessary due to the nature of the game but is here
+        // for generality
+        if score == next_score && !terminated {
+            self.truncation_timer += 1;
+        } else {
+            self.truncation_timer = 0;
+        }
         if terminated {
             *self = Self::new(next_frame, next_score);
         } else {
@@ -62,13 +69,6 @@ impl Episode {
             (state_slice, next_state_slice, action, reward, terminated),
             score,
         ));
-        // && !terminated is technically not necessary due to the nature of the game but is here
-        // for generality
-        if score == next_score && !terminated {
-            self.truncation_timer += 1;
-        } else {
-            self.truncation_timer = 0;
-        }
         if terminated {
             Status::Done(Done::Terminated)
         } else if self.truncation_timer_exceeded_threshold() {
