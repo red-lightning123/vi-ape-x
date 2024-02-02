@@ -1,5 +1,3 @@
-mod frame_stack;
-use frame_stack::FrameStack;
 mod message_bridge;
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
