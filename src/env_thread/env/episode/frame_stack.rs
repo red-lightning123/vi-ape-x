@@ -20,9 +20,9 @@ impl FrameStack {
 }
 
 impl From<ImageOwned2> for FrameStack {
-    fn from(frame: ImageOwned2) -> FrameStack {
+    fn from(frame: ImageOwned2) -> Self {
         let frame = Rc::new(frame);
-        FrameStack {
+        Self {
             stack: VecDeque::from([frame.clone(), frame.clone(), frame.clone(), frame]),
         }
     }
