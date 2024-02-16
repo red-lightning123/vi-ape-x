@@ -48,7 +48,7 @@ impl BasicEpisode {
             Status::Running
         }
     }
-    pub fn reset_to_current(&mut self) {
+    fn reset_to_current(&mut self) {
         self.state.reset_to_current();
     }
     fn terminated(score: u32, next_score: u32) -> bool {
