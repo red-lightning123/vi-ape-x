@@ -19,13 +19,19 @@ impl FrameStack {
     }
     pub fn reset_to_current(&mut self) {
         let frame = self.stack.pop_back().unwrap();
-        self.stack = VecDeque::from([frame.clone(), frame.clone(), frame.clone(), frame]);
+        *self = Self::from(frame);
     }
 }
 
 impl From<ImageOwned2> for FrameStack {
     fn from(frame: ImageOwned2) -> Self {
         let frame = Rc::new(frame);
+        Self::from(frame)
+    }
+}
+
+impl From<Rc<ImageOwned2>> for FrameStack {
+    fn from(frame: Rc<ImageOwned2>) -> Self {
         Self {
             stack: VecDeque::from([frame.clone(), frame.clone(), frame.clone(), frame]),
         }
