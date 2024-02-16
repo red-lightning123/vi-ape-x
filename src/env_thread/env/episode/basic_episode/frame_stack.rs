@@ -17,6 +17,10 @@ impl FrameStack {
     pub fn as_slice(&mut self) -> &State {
         <&State>::try_from(&*self.stack.make_contiguous()).unwrap()
     }
+    pub fn reset_to_current(&mut self) {
+        let frame = self.stack.pop_back().unwrap();
+        self.stack = VecDeque::from([frame.clone(), frame.clone(), frame.clone(), frame]);
+    }
 }
 
 impl From<ImageOwned2> for FrameStack {

@@ -27,11 +27,10 @@ impl BasicEpisode {
         let state_slice = self.state.as_slice().clone();
         let score = self.score;
         let terminated = Self::terminated(score, next_score);
+        self.state.push(next_frame);
+        self.score = next_score;
         if terminated {
-            *self = Self::new(next_frame, next_score);
-        } else {
-            self.state.push(next_frame);
-            self.score = next_score;
+            self.reset_to_current();
         }
         let next_state_slice = self.state.as_slice().clone();
         let reward = if terminated {
@@ -48,6 +47,9 @@ impl BasicEpisode {
         } else {
             Status::Running
         }
+    }
+    pub fn reset_to_current(&mut self) {
+        self.state.reset_to_current();
     }
     fn terminated(score: u32, next_score: u32) -> bool {
         // In theory, the score should only decrease once the game is

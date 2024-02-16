@@ -32,11 +32,18 @@ impl TimeLimitedWrapper {
             .episode
             .step(action, next_frame, next_score, transition_queue);
         match status {
+            Status::Done(Done::Terminated) => {
+                self.reset_wrapper_to_current();
+                status
+            }
             Status::Running if self.truncation_timer_exceeded_threshold() => {
                 Status::Done(Done::ShouldTruncate)
             }
-            _ => status,
+            Status::Running | Status::Done(Done::ShouldTruncate) => status,
         }
+    }
+    fn reset_wrapper_to_current(&mut self) {
+        self.truncation_timer = 0;
     }
     fn truncation_timer_exceeded_threshold(&self) -> bool {
         const TIMER_THRESHOLD: u32 = 200;
