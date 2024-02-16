@@ -2,7 +2,7 @@ mod message_bridge;
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
 mod episode;
-use episode::{Done, Episode, Status};
+use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
 
 use super::{EnvThreadMessage, State, Transition};
 use crate::GameThreadMessage;
@@ -12,7 +12,7 @@ use std::collections::VecDeque;
 
 pub struct Env {
     bridge: MessageBridge,
-    episode: Episode,
+    episode: TimeLimitedWrapper,
     pending_transitions: VecDeque<(Transition, u32)>,
     waiting_hold: bool,
 }
@@ -30,7 +30,7 @@ impl Env {
         } = reply;
         Ok(Self {
             bridge,
-            episode: Episode::new(frame, score),
+            episode: TimeLimitedWrapper::new(BasicEpisode::new(frame, score)),
             pending_transitions: VecDeque::new(),
             waiting_hold: received_wait_for_hold,
         })
@@ -59,7 +59,7 @@ impl Env {
     }
     fn truncate(&mut self) -> Result<(), StepError> {
         let (frame, score) = self.send(Request::Truncation)?;
-        self.episode = Episode::new(frame, score);
+        self.episode = TimeLimitedWrapper::new(BasicEpisode::new(frame, score));
         Ok(())
     }
     fn send(&mut self, request: Request) -> Result<(ImageOwned2, u32), StepError> {
