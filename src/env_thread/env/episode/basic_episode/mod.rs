@@ -1,7 +1,8 @@
-use super::FrameStack;
+mod frame_stack;
 use super::{Done, Status};
 use super::{State, Transition};
 use crate::ImageOwned2;
+use frame_stack::FrameStack;
 use std::collections::VecDeque;
 
 pub struct BasicEpisode {
