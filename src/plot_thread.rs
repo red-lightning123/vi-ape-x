@@ -1,10 +1,6 @@
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
 use crate::{MasterMessage, MasterThreadMessage, ThreadId};
 use crossbeam_channel::{Receiver, Sender};
-use plotlib::page::Page;
-use plotlib::repr::Plot as PlotlibPlot;
-use plotlib::style::{LineJoin, LineStyle};
-use plotlib::view::ContinuousView;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -23,41 +19,48 @@ struct Plot {
     points: Vec<(f64, f64)>,
     current_n: usize,
     current_sum: f64,
+    data_per_point: usize,
 }
 
 impl Plot {
     fn new() -> Self {
+        const DATA_PER_POINT: usize = 10;
         Self {
             points: vec![],
             current_n: 0,
             current_sum: 0.0,
+            data_per_point: DATA_PER_POINT,
         }
     }
     fn add_datum(&mut self, (x, y): (f64, f64)) {
         self.current_n += 1;
         self.current_sum += y;
-        if self.current_n == self.data_per_point() {
-            let y_average = self.current_sum / (self.data_per_point() as f64);
+        if self.current_n == self.data_per_point {
+            let y_average = self.current_sum / (self.data_per_point as f64);
             self.points.push((x, y_average));
             self.current_n = 0;
             self.current_sum = 0.0;
-            self.draw_plot();
+            self.update_plot();
         }
     }
-    fn draw_plot(&self) {
-        let plot = PlotlibPlot::new(self.points.clone())
-            .line_style(LineStyle::new().colour("blue").linejoin(LineJoin::Round));
-        let view = ContinuousView::new()
-            .add(plot)
-            .x_label("Step")
-            .y_label("Average Score");
-        // an err is typically returned when either the x or y
-        // range are invalid. The intended behavior in that case
-        // is to ignore the error and just avoid saving the svg.
-        // plotlib doesn't seem to provide a convenient way to differentiate
-        // between errors for this function, so we can't match for just the
-        // range-related error. thus we silently ignore any other errors too
-        let _ = Page::single(&view).save("progress.svg");
+    fn update_plot(&self) {
+        // The plot is meant to be used in a data-science context. It
+        // is therefore desirable for external tools to be able to
+        // analyze the plot as they see fit, possibly producing several
+        // images from the same data.
+        // As such, we do not export to a visual format like svg or
+        // draw to the screen, which would heavily constrain the types
+        // of analysis an external tool could do.
+        // Instead, it seems better to serialize the plot and let the
+        // external viewer decide what it wants to do with the data.
+        // As for the chosen serialization format, json lends itself
+        // quite naturally. Being simple, readable, and
+        // self-documenting, it is an ideal format for basic analysis
+        self.export_json("progress.json");
+    }
+    fn export_json<P: AsRef<Path>>(&self, path: P) {
+        let file = create_file_buf_write(path).unwrap();
+        serde_json::to_writer(file, self).unwrap();
     }
     fn save<P: AsRef<Path>>(&self, path: P) {
         let file = create_file_buf_write(path).unwrap();
@@ -70,10 +73,6 @@ impl Plot {
             !has_data_left(file).unwrap(),
             "deserialization of file didn't reach EOF"
         );
-    }
-    const fn data_per_point(&self) -> usize {
-        const DATA_PER_POINT: usize = 10;
-        DATA_PER_POINT
     }
 }
 
