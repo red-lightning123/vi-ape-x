@@ -1,9 +1,13 @@
+mod v_sync_data;
+mod window;
+mod x_shm_seg;
 use crate::keycodes;
-use crate::GlxContext;
 use crate::ImageRef4;
 use crate::X11Display;
 use std::cell::OnceCell;
 use std::process::Command;
+use v_sync_data::VSyncData;
+pub use window::Window;
 use x11rb::connection::Connection;
 use x11rb::connection::RequestConnection;
 use x11rb::properties::WmClass;
@@ -11,15 +15,7 @@ use x11rb::protocol::shm::ConnectionExt as _;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt as _;
 use x11rb::xcb_ffi::XCBConnection;
-
-fn choose_matching_fbconfigs(
-    display: *mut x11::xlib::Display,
-    screen_num: i32,
-) -> *mut x11::glx::GLXFBConfig {
-    let mut fb_configs_cnt = 0;
-    let atts = [0];
-    unsafe { x11::glx::glXChooseFBConfig(display, screen_num, atts.as_ptr(), &mut fb_configs_cnt) }
-}
+use x_shm_seg::XShmSeg;
 
 fn get_children(
     conn: &XCBConnection,
@@ -88,73 +84,6 @@ fn find_descendant_win_with_title(conn: &XCBConnection, parent: u32, name: &str)
     None
 }
 
-struct XShmSeg {
-    address: *mut core::ffi::c_void,
-    x_seg: u32,
-}
-
-impl XShmSeg {
-    fn new(conn: &XCBConnection, len: usize) -> Self {
-        let shmid = unsafe { libc::shmget(libc::IPC_PRIVATE, len, libc::IPC_CREAT | 0o777) };
-        let address = unsafe { libc::shmat(shmid, std::ptr::null(), 0) };
-        let x_seg = conn.generate_id().unwrap();
-        conn.shm_attach(x_seg, shmid as u32, false).unwrap();
-        Self { address, x_seg }
-    }
-    fn address(&self) -> *mut core::ffi::c_void {
-        self.address
-    }
-    fn xid(&self) -> u32 {
-        self.x_seg
-    }
-    fn close(self, conn: &XCBConnection) {
-        conn.shm_detach(self.x_seg).unwrap();
-        unsafe { libc::shmdt(self.address) };
-    }
-}
-
-#[derive(Clone)]
-pub struct Window {
-    handle: u32,
-    dims: xproto::GetGeometryReply,
-    attribs: xproto::GetWindowAttributesReply,
-    image_len: usize,
-}
-
-impl Window {
-    fn new(
-        handle: u32,
-        dims: xproto::GetGeometryReply,
-        attribs: xproto::GetWindowAttributesReply,
-        image_len: usize,
-    ) -> Self {
-        Self {
-            handle,
-            dims,
-            attribs,
-            image_len,
-        }
-    }
-    fn handle(&self) -> u32 {
-        self.handle
-    }
-    pub fn width(&self) -> u16 {
-        self.dims.width
-    }
-    pub fn height(&self) -> u16 {
-        self.dims.height
-    }
-    pub fn depth(&self) -> u8 {
-        self.dims.depth
-    }
-    fn image_len(&self) -> usize {
-        self.image_len
-    }
-    pub fn class(&self) -> xproto::WindowClass {
-        self.attribs.class
-    }
-}
-
 #[derive(Clone, Copy)]
 pub enum GameKey {
     S,
@@ -165,54 +94,6 @@ pub enum GameKey {
 pub enum KeyEventKind {
     Press,
     Release,
-}
-
-pub struct VSyncData {
-    glx_context: GlxContext,
-    win: u32,
-}
-
-impl VSyncData {
-    fn new(
-        display: &mut X11Display,
-        conn: &XCBConnection,
-        screen: &xproto::Screen,
-        screen_num: i32,
-        root_win: u32,
-        ref_win: &Window,
-    ) -> Self {
-        let win = conn.generate_id().unwrap();
-        conn.create_window(
-            ref_win.depth(),
-            win,
-            root_win,
-            0,
-            0,
-            1,
-            1,
-            0,
-            xproto::WindowClass::INPUT_OUTPUT,
-            screen.root_visual,
-            &xproto::CreateWindowAux::default(),
-        )
-        .unwrap();
-        let fb_configs = choose_matching_fbconfigs(display.as_mut(), screen_num);
-        let mut glx_context = display.create_glx_context(unsafe { *fb_configs });
-        unsafe { x11::xlib::XFree(fb_configs.cast::<core::ffi::c_void>()) };
-        display.make_glx_context_current(u64::from(win), &mut glx_context);
-        Self { glx_context, win }
-    }
-    fn close(self, display: &mut X11Display, conn: &XCBConnection) {
-        display.destroy_glx_context(self.glx_context);
-        conn.destroy_window(self.win).unwrap();
-    }
-    fn swap_buffers(&mut self, display: &mut X11Display) {
-        display.swap_buffers(u64::from(self.win));
-    }
-    fn wait(&mut self, display: &mut X11Display) {
-        self.swap_buffers(display);
-        unsafe { x11::glx::glXWaitGL() };
-    }
 }
 
 pub struct GameInterface<'a> {
