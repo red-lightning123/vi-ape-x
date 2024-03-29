@@ -1,3 +1,6 @@
+mod window;
+pub use window::Window;
+
 pub struct X11Display<'a> {
     display: &'a mut x11::xlib::Display,
 }

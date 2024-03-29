@@ -1,13 +1,12 @@
 mod v_sync_data;
-mod window;
 mod x_shm_seg;
 use crate::keycodes;
 use crate::ImageRef4;
+use crate::Window;
 use crate::X11Display;
 use std::cell::OnceCell;
 use std::process::Command;
 use v_sync_data::VSyncData;
-pub use window::Window;
 use x11rb::connection::Connection;
 use x11rb::connection::RequestConnection;
 use x11rb::properties::WmClass;

@@ -1,5 +1,5 @@
-use super::Window;
 use crate::GlxContext;
+use crate::Window;
 use crate::X11Display;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
