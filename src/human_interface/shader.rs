@@ -110,17 +110,6 @@ impl Program {
     }
 }
 
-pub struct ProgramBinding(u32);
-
-impl Drop for ProgramBinding {
-    fn drop(&mut self) {
-        #[cfg(debug_assertions)]
-        unsafe {
-            gl.use_program(None)
-        };
-    }
-}
-
 pub struct ProgramSource {
     vertex: Option<String>,
     fragment: Option<String>,
