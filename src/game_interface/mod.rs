@@ -153,6 +153,12 @@ impl<'a> GameInterface<'a> {
                 .spawn()
                 .unwrap(),
         );
+        // Wait for the game to set up and prepare a window.
+        // Technically, waiting for a fixed duration does not guarantee that the
+        // game will be ready afterwards. However, I haven't found a more
+        // precise way to ensure this, so waiting shall suffice. The duration
+        // must be long enough for the game to set up
+        std::thread::sleep(std::time::Duration::from_millis(2000));
         let win_handle = self.wait_for_win_with_title(WIN_TITLE);
         let win_dims = self.conn.get_geometry(win_handle).unwrap().reply().unwrap();
         let win_attribs = self
@@ -164,8 +170,7 @@ impl<'a> GameInterface<'a> {
         let win_image_len =
             (win_dims.depth as usize) * (win_dims.width as usize) * (win_dims.height as usize);
         let win = Window::new(win_handle, win_dims, win_attribs, win_image_len);
-        let image_seg = self
-            .image_seg
+        self.image_seg
             .get_or_init(|| XShmSeg::new(&self.conn, win.image_len()));
         self.vsync.get_or_init(|| {
             VSyncData::new(
@@ -177,32 +182,7 @@ impl<'a> GameInterface<'a> {
                 &win,
             )
         });
-
-        // waiting here to make sure win has already been drawn to
-        // otherwise frame grabbing may fail
-        // the requirements of shm_get_image on the window aren't clear to me
-        // so just wait until it doesn't return an error
-        while self
-            .conn
-            .shm_get_image(
-                win.handle(),
-                0,
-                0,
-                win.width(),
-                win.height(),
-                !0,
-                xproto::ImageFormat::Z_PIXMAP.into(),
-                image_seg.xid(),
-                0,
-            )
-            .unwrap()
-            .reply()
-            .is_err()
-        {}
         self.win = Some(win);
-
-        // wait a bit since the window hasn't been drawn to yet (ignore the first few frames)
-        std::thread::sleep(std::time::Duration::from_millis(2000));
     }
     pub fn end(&mut self) {
         if let Some(process) = &mut self.process {
