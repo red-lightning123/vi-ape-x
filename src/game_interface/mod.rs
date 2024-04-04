@@ -13,6 +13,7 @@ use x11rb::properties::WmClass;
 use x11rb::protocol::shm::ConnectionExt as _;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt as _;
+use x11rb::wrapper::ConnectionExt as _;
 use x11rb::xcb_ffi::XCBConnection;
 use x_shm_seg::XShmSeg;
 
@@ -186,15 +187,20 @@ impl<'a> GameInterface<'a> {
     }
     pub fn end(&mut self) {
         if let Some(process) = &mut self.process {
-            // this might seem superfluous as the window would be destroyed anyways with process.kill().
-            // However, the window only dies shortly after the process does. This can cause
-            // problems if Self::start() is called while the window is still alive, as then the
-            // zombie window may be used to initiate a new game
+            // Empirically, it seems that the window is indirectly destroyed
+            // once its owning process is killed. However, I haven't found any
+            // documentation of this behavior. It is critical for the program
+            // that the window is destroyed before the end of this function.
+            // Therefore, to be safe, we destroy it manually
             self.conn
                 .destroy_window(self.win.as_ref().unwrap().handle())
                 .unwrap();
+            // Sync to make sure that the window is destroyed right here
+            self.conn.sync().unwrap();
             process.kill().unwrap();
-            // TODO: it's possible that waiting actually isn't necessary after process.kill()
+            // Waiting for the process's death is not required since the window
+            // is destroyed manually, but it seems cleaner to start without a
+            // dangling process, so wait anyway
             process.wait().unwrap();
             self.process = None;
             self.win = None;
