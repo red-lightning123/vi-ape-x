@@ -13,7 +13,15 @@ fn choose_matching_fbconfigs(
     screen_num: i32,
 ) -> *mut x11::glx::GLXFBConfig {
     let mut fb_configs_cnt = 0;
-    let atts = [0];
+    let atts = [
+        // A double-buffered config is required because the program relies on
+        // glXSwapBuffers for flushing the gl queue. On single-buffered configs,
+        // buffer-swapping is a no-op, so flushing would have to be done
+        // manually via glFlush in order to support them
+        x11::glx::GLX_DOUBLEBUFFER,
+        true as i32,
+        0,
+    ];
     unsafe { x11::glx::glXChooseFBConfig(display, screen_num, atts.as_ptr(), &mut fb_configs_cnt) }
 }
 
