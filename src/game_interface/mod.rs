@@ -25,50 +25,35 @@ fn get_children(
     Ok(tree.children)
 }
 
-enum GetWindowTitleError {
+enum GetWindowPidError {
+    Connection(x11rb::rust_connection::ConnectionError),
     Reply(x11rb::rust_connection::ReplyError),
-    FromUtf8(std::string::FromUtf8Error),
+    PropertyFormat,
+    EmptyProperty,
 }
 
-fn get_window_title_bytes(
-    conn: &XCBConnection,
-    win: u32,
-) -> Result<Vec<u8>, x11rb::rust_connection::ReplyError> {
-    Ok(conn
-        .get_property(
-            false,
-            win,
-            xproto::AtomEnum::WM_NAME,
-            xproto::AtomEnum::STRING,
-            0,
-            32,
-        )?
-        .reply()?
-        .value)
+fn get_window_pid(conn: &XCBConnection, win: u32) -> Result<u32, GetWindowPidError> {
+    let wm_pid_atom = conn
+        .intern_atom(false, b"_NET_WM_PID")
+        .map_err(GetWindowPidError::Connection)?
+        .reply()
+        .map_err(GetWindowPidError::Reply)?
+        .atom;
+    conn.get_property(false, win, wm_pid_atom, xproto::AtomEnum::CARDINAL, 0, 1)
+        .map_err(GetWindowPidError::Connection)?
+        .reply()
+        .map_err(GetWindowPidError::Reply)?
+        .value32()
+        .ok_or(GetWindowPidError::PropertyFormat)?
+        .next()
+        .ok_or(GetWindowPidError::EmptyProperty)
 }
 
-fn get_window_title(conn: &XCBConnection, win: u32) -> Result<String, GetWindowTitleError> {
-    let title_bytes = get_window_title_bytes(conn, win).map_err(GetWindowTitleError::Reply)?;
-    let title = String::from_utf8(title_bytes).map_err(GetWindowTitleError::FromUtf8)?;
-    Ok(title)
-}
-
-fn get_window_instance_name(
-    conn: &XCBConnection,
-    win: u32,
-) -> Result<String, x11rb::rust_connection::ReplyError> {
-    Ok(
-        std::str::from_utf8(WmClass::get(conn, win)?.reply()?.instance())
-            .unwrap()
-            .to_string(),
-    )
-}
-
-fn win_title_eq(conn: &XCBConnection, win: u32, name: &str) -> bool {
+fn win_pid_eq(conn: &XCBConnection, win: u32, pid: u32) -> bool {
     // get_window_title may fail on non-UTF8 titles (or possibly if there's an
     // x11 connection error), but such a window wouldn't be the one we're
     // looking for anyway so errors are ignored
-    get_window_title(conn, win).is_ok_and(|instance_name| instance_name == name)
+    get_window_pid(conn, win).is_ok_and(|win_pid| win_pid == pid)
 }
 
 fn find_descendant_win<P>(conn: &XCBConnection, parent: u32, predicate: &mut P) -> Option<u32>
@@ -90,8 +75,8 @@ where
     None
 }
 
-fn find_descendant_win_with_title(conn: &XCBConnection, parent: u32, name: &str) -> Option<u32> {
-    find_descendant_win(conn, parent, &mut |win| win_title_eq(conn, win, name))
+fn find_descendant_win_with_pid(conn: &XCBConnection, parent: u32, pid: u32) -> Option<u32> {
+    find_descendant_win(conn, parent, &mut |win| win_pid_eq(conn, win, pid))
 }
 
 #[derive(Clone, Copy)]
@@ -145,32 +130,27 @@ impl<'a> GameInterface<'a> {
             image_seg: OnceCell::new(),
         }
     }
-    fn wait_for_win_with_title(&self, title: &str) -> u32 {
+    fn wait_for_win_with_pid(&self, pid: u32) -> u32 {
         loop {
-            if let Some(win_handle) =
-                find_descendant_win_with_title(&self.conn, self.root_win, title)
-            {
+            if let Some(win_handle) = find_descendant_win_with_pid(&self.conn, self.root_win, pid) {
                 return win_handle;
             }
         }
     }
     pub fn start(&mut self) {
-        const WIN_TITLE: &str = "Pixave's Journey";
-        self.process = Some(
-            Command::new("python")
-                .current_dir("pixaves_journey")
-                .args(["main.py"])
-                .stderr(std::process::Stdio::null())
-                .spawn()
-                .unwrap(),
-        );
+        let process = Command::new("python")
+            .current_dir("pixaves_journey")
+            .args(["main.py"])
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
         // Wait for the game to set up and prepare a window.
         // Technically, waiting for a fixed duration does not guarantee that the
         // game will be ready afterwards. However, I haven't found a more
         // precise way to ensure this, so waiting shall suffice. The duration
         // must be long enough for the game to set up
         std::thread::sleep(std::time::Duration::from_millis(2000));
-        let win_handle = self.wait_for_win_with_title(WIN_TITLE);
+        let win_handle = self.wait_for_win_with_pid(process.id());
         let win_dims = self.conn.get_geometry(win_handle).unwrap().reply().unwrap();
         let win_attribs = self
             .conn
@@ -193,6 +173,7 @@ impl<'a> GameInterface<'a> {
                 &win,
             )
         });
+        self.process = Some(process);
         self.win = Some(win);
     }
     pub fn end(&mut self) {
