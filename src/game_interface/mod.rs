@@ -64,24 +64,34 @@ fn get_window_instance_name(
     )
 }
 
-fn find_descendant_win_with_title(conn: &XCBConnection, parent: u32, name: &str) -> Option<u32> {
-    // can fail on non-UTF8 titles (or possibly if there's an x11 connection error), but such a
-    // window wouldn't be the one we're looking for anyways so errors are ignored
-    if let Ok(instance_name) = get_window_title(conn, parent) {
-        if instance_name == name {
-            return Some(parent);
-        }
+fn win_title_eq(conn: &XCBConnection, win: u32, name: &str) -> bool {
+    // get_window_title may fail on non-UTF8 titles (or possibly if there's an
+    // x11 connection error), but such a window wouldn't be the one we're
+    // looking for anyway so errors are ignored
+    get_window_title(conn, win).is_ok_and(|instance_name| instance_name == name)
+}
+
+fn find_descendant_win<P>(conn: &XCBConnection, parent: u32, predicate: &mut P) -> Option<u32>
+where
+    P: FnMut(u32) -> bool,
+{
+    if predicate(parent) {
+        return Some(parent);
     }
-    // can fail e. g. if a window was moved/deleted during the call
+    // get_children may fail e. g. if a window was moved/deleted during the call
     // assumes that it's not the right window, errors are ignored
     if let Ok(children) = get_children(conn, parent) {
         for child in children {
-            if let Some(win) = find_descendant_win_with_title(conn, child, name) {
+            if let Some(win) = find_descendant_win(conn, child, predicate) {
                 return Some(win);
             }
         }
     }
     None
+}
+
+fn find_descendant_win_with_title(conn: &XCBConnection, parent: u32, name: &str) -> Option<u32> {
+    find_descendant_win(conn, parent, &mut |win| win_title_eq(conn, win, name))
 }
 
 #[derive(Clone, Copy)]
