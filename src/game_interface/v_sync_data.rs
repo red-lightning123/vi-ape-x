@@ -1,3 +1,4 @@
+use crate::choose_matching_fbconfigs;
 use crate::GlxContext;
 use crate::Window;
 use crate::X11Display;
@@ -5,15 +6,6 @@ use x11rb::connection::Connection;
 use x11rb::protocol::xproto;
 use x11rb::protocol::xproto::ConnectionExt;
 use x11rb::xcb_ffi::XCBConnection;
-
-fn choose_matching_fbconfigs(
-    display: *mut x11::xlib::Display,
-    screen_num: i32,
-) -> *mut x11::glx::GLXFBConfig {
-    let mut fb_configs_cnt = 0;
-    let atts = [0];
-    unsafe { x11::glx::glXChooseFBConfig(display, screen_num, atts.as_ptr(), &mut fb_configs_cnt) }
-}
 
 pub struct VSyncData {
     glx_context: GlxContext,

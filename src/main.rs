@@ -10,7 +10,7 @@ use game::Game;
 use game_interface::{GameInterface, GameKey, KeyEventKind};
 use human_interface::HumanInterface;
 use image::{Color2, Color4, ImageOwned, ImageOwned2, ImageRef, ImageRef4};
-use x11_utils::{GlxContext, Window, X11Display};
+use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};
 
 mod master_thread;
 use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, Query, ThreadId};
