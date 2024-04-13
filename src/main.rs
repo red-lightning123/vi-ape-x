@@ -9,7 +9,7 @@ mod x11_utils;
 use game::Game;
 use game_interface::{GameInterface, GameKey, KeyEventKind};
 use human_interface::HumanInterface;
-use image::{Color2, Color4, ImageOwned, ImageOwned2, ImageRef, ImageRef4};
+use image::{Color2, Color4, ImageOwned, ImageOwned2, ImageRef, ImageRef2, ImageRef4};
 use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};
 
 mod master_thread;

@@ -1,19 +1,27 @@
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
 use super::{State, Transition};
 mod model_fns;
-use crate::ImageOwned;
+use crate::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
 use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};
 
+fn extract_planes(frame: &ImageRef2) -> (Vec<u8>, Vec<u8>) {
+    frame.data().chunks(2).map(|a| (a[0], a[1])).unzip()
+}
+
+fn frame_to_pixels(frame: &ImageRef2) -> Vec<u8> {
+    let (plane_0, plane_1) = extract_planes(frame);
+    [plane_0, plane_1].concat()
+}
+
 fn state_to_pixels(state: &State) -> Vec<u8> {
-    [
-        (*state[0]).as_ref().data(),
-        (*state[1]).as_ref().data(),
-        (*state[2]).as_ref().data(),
-        (*state[3]).as_ref().data(),
-    ]
-    .concat()
+    state
+        .iter()
+        .map(|frame| (**frame).as_ref())
+        .map(|frame| frame_to_pixels(&frame))
+        .collect::<Vec<_>>()
+        .concat()
 }
 
 pub struct BasicModel {
