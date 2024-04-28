@@ -7,13 +7,16 @@ use std::collections::VecDeque;
 pub struct TimeLimitedWrapper {
     episode: BasicEpisode,
     truncation_timer: u32,
+    current_score_record: u32,
 }
 
 impl TimeLimitedWrapper {
     pub fn new(episode: BasicEpisode) -> Self {
+        let current_score_record = episode.score();
         Self {
             episode,
             truncation_timer: 0,
+            current_score_record,
         }
     }
     pub fn step(
@@ -23,10 +26,11 @@ impl TimeLimitedWrapper {
         next_score: u32,
         transition_queue: &mut VecDeque<(Transition, u32)>,
     ) -> Status {
-        if self.episode.score() == next_score {
-            self.truncation_timer += 1;
-        } else {
+        let score_exceeded_record = self.receive_next_score(next_score);
+        if score_exceeded_record {
             self.truncation_timer = 0;
+        } else {
+            self.truncation_timer += 1;
         }
         let status = self
             .episode
@@ -44,6 +48,14 @@ impl TimeLimitedWrapper {
     }
     fn reset_wrapper_to_current(&mut self) {
         self.truncation_timer = 0;
+        self.current_score_record = self.episode.score();
+    }
+    fn receive_next_score(&mut self, next_score: u32) -> bool {
+        let score_exceeded_record = self.current_score_record < next_score;
+        if score_exceeded_record {
+            self.current_score_record = next_score;
+        }
+        score_exceeded_record
     }
     fn truncation_timer_exceeded_threshold(&self) -> bool {
         const TIMER_THRESHOLD: u32 = 200;
