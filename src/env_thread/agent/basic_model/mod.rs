@@ -43,7 +43,7 @@ impl BasicModel {
 impl Actor for BasicModel {
     fn best_action(&self, state: &State) -> u8 {
         let state_values = state_to_pixels(state);
-        let state_arg = Tensor::new(&[8, 128, 72])
+        let state_arg = Tensor::new(&[8, 72, 128])
             .with_values(&state_values)
             .unwrap();
 
@@ -57,8 +57,8 @@ impl Actor for BasicModel {
 
 impl BasicLearner for BasicModel {
     fn train_batch(&mut self, batch: &[&Transition]) -> f32 {
-        let mut states = Vec::with_capacity(32 * 8 * 128 * 72);
-        let mut next_states = Vec::with_capacity(32 * 8 * 128 * 72);
+        let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
+        let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut actions = Vec::with_capacity(32);
         let mut rewards = Vec::with_capacity(32);
         let mut dones = Vec::with_capacity(32);
@@ -70,8 +70,8 @@ impl BasicLearner for BasicModel {
             dones.push(f32::from(u8::from(*terminated)));
         }
 
-        let states_arg = Tensor::new(&[32, 8, 128, 72]).with_values(&states).unwrap();
-        let next_states_arg = Tensor::new(&[32, 8, 128, 72])
+        let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();
+        let next_states_arg = Tensor::new(&[32, 8, 72, 128])
             .with_values(&next_states)
             .unwrap();
         let actions_arg = Tensor::new(&[32]).with_values(&actions).unwrap();
@@ -101,8 +101,8 @@ impl PrioritizedLearner for BasicModel {
         replay_memory_len: usize,
         beta: f64,
     ) -> (f32, Vec<f64>) {
-        let mut states = Vec::with_capacity(32 * 8 * 128 * 72);
-        let mut next_states = Vec::with_capacity(32 * 8 * 128 * 72);
+        let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
+        let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut actions = Vec::with_capacity(32);
         let mut rewards = Vec::with_capacity(32);
         let mut dones = Vec::with_capacity(32);
@@ -114,8 +114,8 @@ impl PrioritizedLearner for BasicModel {
             dones.push(f32::from(u8::from(*terminated)));
         }
 
-        let states_arg = Tensor::new(&[32, 8, 128, 72]).with_values(&states).unwrap();
-        let next_states_arg = Tensor::new(&[32, 8, 128, 72])
+        let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();
+        let next_states_arg = Tensor::new(&[32, 8, 72, 128])
             .with_values(&next_states)
             .unwrap();
         let actions_arg = Tensor::new(&[32]).with_values(&actions).unwrap();

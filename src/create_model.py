@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 def transition_inputs():
-    return keras.layers.Input(shape=(8, 128, 72))
+    return keras.layers.Input(shape=(8, 72, 128))
 
 def preprocessed_inputs(inputs):
     normalized = keras.layers.Lambda(lambda x : x / 255.0)(inputs)
@@ -191,9 +191,9 @@ class Agent(tf.Module):
         
 agent = Agent()
 
-single_state = tf.zeros([8, 128, 72], dtype=tf.uint8)
-states = tf.zeros([32, 8, 128, 72], dtype=tf.uint8)
-next_states = tf.zeros([32, 8, 128, 72], dtype=tf.uint8)
+single_state = tf.zeros([8, 72, 128], dtype=tf.uint8)
+states = tf.zeros([32, 8, 72, 128], dtype=tf.uint8)
+next_states = tf.zeros([32, 8, 72, 128], dtype=tf.uint8)
 actions = tf.zeros([32], dtype=tf.uint8)
 rewards = tf.zeros([32])
 dones = tf.zeros([32], dtype=tf.float32)
