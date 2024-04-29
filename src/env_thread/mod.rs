@@ -72,6 +72,10 @@ impl PlotDatumSender {
     fn send_loss(&self, loss: f32, schedule: &TrainingSchedule) {
         self.send_datum(PlotType::Loss, f64::from(loss), schedule);
     }
+
+    fn send_q_val(&self, q_val: f32, schedule: &TrainingSchedule) {
+        self.send_datum(PlotType::QVal, f64::from(q_val), schedule);
+    }
 }
 
 const THREAD_ID: ThreadId = ThreadId::Env;
