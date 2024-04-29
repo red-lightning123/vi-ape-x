@@ -2,10 +2,11 @@ use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
 use crate::{MasterMessage, MasterThreadMessage, ThreadId};
 use crossbeam_channel::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 pub enum PlotThreadMessage {
-    Datum((f64, f64)),
+    Datum(PlotType, (f64, f64)),
     Master(MasterMessage),
 }
 
@@ -20,16 +21,20 @@ struct Plot {
     current_n: usize,
     current_sum: f64,
     data_per_point: usize,
+    output_path: PathBuf,
+    fs_name: PathBuf,
 }
 
 impl Plot {
-    fn new() -> Self {
+    fn new(output_path: PathBuf, fs_name: PathBuf, data_per_point: usize) -> Self {
         const DATA_PER_POINT: usize = 10;
         Self {
             points: vec![],
             current_n: 0,
             current_sum: 0.0,
-            data_per_point: DATA_PER_POINT,
+            data_per_point,
+            output_path,
+            fs_name,
         }
     }
     fn add_datum(&mut self, (x, y): (f64, f64)) {
@@ -56,10 +61,12 @@ impl Plot {
         // As for the chosen serialization format, json lends itself
         // quite naturally. Being simple, readable, and
         // self-documenting, it is an ideal format for basic analysis
-        self.export_json("progress.json");
+        self.export_json();
     }
-    fn export_json<P: AsRef<Path>>(&self, path: P) {
-        let file = create_file_buf_write(path).unwrap();
+    fn export_json(&self) {
+        let file =
+            create_file_buf_write(self.output_path.join(&self.fs_name).with_extension("json"))
+                .unwrap();
         serde_json::to_writer(file, self).unwrap();
     }
     fn save<P: AsRef<Path>>(&self, path: P) {
@@ -74,12 +81,58 @@ impl Plot {
             "deserialization of file didn't reach EOF"
         );
     }
+    fn fs_name(&self) -> &PathBuf {
+        &self.fs_name
+    }
+}
+
+pub enum PlotType {
+    EpisodeScore,
+}
+
+struct PlotSet {
+    episode_score: Plot,
+}
+
+impl PlotSet {
+    fn new<P: AsRef<Path>>(output_path: P) -> Self {
+        let output_path = output_path.as_ref();
+        Self {
+            episode_score: Plot::new(output_path.into(), "episode_score".into(), 10),
+        }
+    }
+    fn add_datum(&mut self, plot_type: PlotType, datum: (f64, f64)) {
+        self.plot_mut(plot_type).add_datum(datum);
+    }
+    fn save<P: AsRef<Path>>(&self, path: P) {
+        let path = path.as_ref();
+        for plot in self.plots() {
+            plot.save(path.join(plot.fs_name()));
+        }
+    }
+    fn load<P: AsRef<Path>>(&mut self, path: P) {
+        let path = path.as_ref();
+        for plot in self.plots_mut() {
+            plot.load(path.join(plot.fs_name()));
+        }
+    }
+    fn plot_mut(&mut self, plot_type: PlotType) -> &mut Plot {
+        match plot_type {
+            PlotType::EpisodeScore => &mut self.episode_score,
+        }
+    }
+    fn plots(&self) -> [&Plot; 1] {
+        [&self.episode_score]
+    }
+    fn plots_mut(&mut self) -> [&mut Plot; 1] {
+        [&mut self.episode_score]
+    }
 }
 
 struct Loop {
     receiver: Receiver<PlotThreadMessage>,
     master_thread_sender: Sender<MasterThreadMessage>,
-    plot: Plot,
+    plots: PlotSet,
 }
 
 impl Loop {
@@ -90,7 +143,7 @@ impl Loop {
         Self {
             receiver,
             master_thread_sender,
-            plot: Plot::new(),
+            plots: PlotSet::new("progress"),
         }
     }
     fn run(&mut self) {
@@ -126,8 +179,8 @@ impl Loop {
                     _ => panic!("{THREAD_NAME} thread: bad message"),
                 },
                 ThreadMode::Running => match self.receiver.recv().unwrap() {
-                    PlotThreadMessage::Datum(datum) => {
-                        self.plot.add_datum(datum);
+                    PlotThreadMessage::Datum(plot_type, datum) => {
+                        self.plots.add_datum(plot_type, datum);
                     }
                     PlotThreadMessage::Master(message) => match message {
                         MasterMessage::PrepareHold => {
@@ -145,10 +198,12 @@ impl Loop {
         }
     }
     fn save<P: AsRef<Path>>(&self, path: P) {
-        self.plot.save(path.as_ref().join("plot"));
+        let plots_path = path.as_ref().join("plots");
+        fs::create_dir_all(&plots_path).unwrap();
+        self.plots.save(plots_path);
     }
     fn load<P: AsRef<Path>>(&mut self, path: P) {
-        self.plot.load(path.as_ref().join("plot"));
+        self.plots.load(path.as_ref().join("plots"));
     }
 }
 

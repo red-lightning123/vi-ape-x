@@ -21,7 +21,7 @@ use ui_thread::{spawn_ui_thread, UiThreadMessage};
 mod env_thread;
 use env_thread::{spawn_env_thread, EnvThreadMessage};
 mod plot_thread;
-use plot_thread::{spawn_plot_thread, PlotThreadMessage};
+use plot_thread::{spawn_plot_thread, PlotThreadMessage, PlotType};
 
 fn main() {
     let master_thread = spawn_master_thread();

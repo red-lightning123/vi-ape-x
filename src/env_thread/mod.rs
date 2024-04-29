@@ -5,8 +5,8 @@ use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
 mod env;
 use crate::{
-    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, Query, ThreadId,
-    UiThreadMessage,
+    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, PlotType, Query,
+    ThreadId, UiThreadMessage,
 };
 use crate::{ImageOwned, ImageOwned2, ImageRef};
 use crossbeam_channel::{Receiver, Sender};
@@ -47,17 +47,27 @@ fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())
 }
 
-fn send_episode_score_to_plot_thread(
-    sender: &Sender<PlotThreadMessage>,
-    score: u32,
-    schedule: &TrainingSchedule,
-) {
-    sender
-        .send(PlotThreadMessage::Datum((
-            f64::from(schedule.n_step()),
-            f64::from(score),
-        )))
-        .unwrap();
+struct PlotDatumSender {
+    sender: Sender<PlotThreadMessage>,
+}
+
+impl PlotDatumSender {
+    fn new(sender: Sender<PlotThreadMessage>) -> Self {
+        Self { sender }
+    }
+
+    fn send_datum(&self, plot_type: PlotType, datum: f64, schedule: &TrainingSchedule) {
+        self.sender
+            .send(PlotThreadMessage::Datum(
+                plot_type,
+                (f64::from(schedule.n_step()), datum),
+            ))
+            .unwrap();
+    }
+
+    fn send_episode_score(&self, score: u32, schedule: &TrainingSchedule) {
+        self.send_datum(PlotType::EpisodeScore, f64::from(score), schedule);
+    }
 }
 
 const THREAD_ID: ThreadId = ThreadId::Env;
@@ -69,7 +79,7 @@ fn step(
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
-    plot_thread_sender: &Sender<PlotThreadMessage>,
+    plot_datum_sender: &PlotDatumSender,
 ) -> bool {
     let state = env.state();
     let concated_state = concat_state_frames(&state);
@@ -103,7 +113,7 @@ fn step(
     if let Some((transition, score)) = env.pop_transition() {
         let terminated = transition.4;
         if terminated {
-            send_episode_score_to_plot_thread(plot_thread_sender, score, schedule);
+            plot_datum_sender.send_episode_score(score, schedule);
         }
         agent.remember(transition);
     }
@@ -177,6 +187,7 @@ pub fn spawn_env_thread(
         const N_EPS_GREEDY_STEPS: u32 = 1_000_000;
         const TARGET_UPDATE_INTERVAL_STEPS: u32 = 10_000;
         const MEMORY_CAPACITY: usize = 1_000_000;
+        let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let mut schedule = TrainingSchedule::new(
             EPS_MIN,
             EPS_MAX,
@@ -248,7 +259,7 @@ pub fn spawn_env_thread(
                         &mut schedule,
                         &master_thread_sender,
                         &ui_thread_sender,
-                        &plot_thread_sender,
+                        &plot_datum_sender,
                     );
                     if should_hold {
                         mode = ThreadMode::Held;
