@@ -4,10 +4,12 @@ use std::path::Path;
 
 pub enum PlotType {
     EpisodeScore,
+    Loss,
 }
 
 pub struct PlotSet {
     episode_score: Plot,
+    loss: Plot,
 }
 
 impl PlotSet {
@@ -15,6 +17,7 @@ impl PlotSet {
         let output_path = output_path.as_ref();
         Self {
             episode_score: Plot::new(output_path.into(), "episode_score".into(), 10),
+            loss: Plot::new(output_path.into(), "loss".into(), 10000),
         }
     }
     pub fn add_datum(&mut self, plot_type: PlotType, datum: (f64, f64)) {
@@ -35,12 +38,13 @@ impl PlotSet {
     fn plot_mut(&mut self, plot_type: PlotType) -> &mut Plot {
         match plot_type {
             PlotType::EpisodeScore => &mut self.episode_score,
+            PlotType::Loss => &mut self.loss,
         }
     }
-    fn plots(&self) -> [&Plot; 1] {
-        [&self.episode_score]
+    fn plots(&self) -> [&Plot; 2] {
+        [&self.episode_score, &self.loss]
     }
-    fn plots_mut(&mut self) -> [&mut Plot; 1] {
-        [&mut self.episode_score]
+    fn plots_mut(&mut self) -> [&mut Plot; 2] {
+        [&mut self.episode_score, &mut self.loss]
     }
 }

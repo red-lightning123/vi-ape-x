@@ -68,6 +68,10 @@ impl PlotDatumSender {
     fn send_episode_score(&self, score: u32, schedule: &TrainingSchedule) {
         self.send_datum(PlotType::EpisodeScore, f64::from(score), schedule);
     }
+
+    fn send_loss(&self, loss: f32, schedule: &TrainingSchedule) {
+        self.send_datum(PlotType::Loss, f64::from(loss), schedule);
+    }
 }
 
 const THREAD_ID: ThreadId = ThreadId::Env;
@@ -126,10 +130,7 @@ fn step(
                 / f64::from(N_BETA_ANNEALING_FRAMES);
         let beta = if beta > BETA_END { BETA_END } else { beta };
         if let Some(loss) = agent.train_step(beta) {
-            const STEPS_PER_PRINT: u32 = 10000;
-            if schedule.n_step() % STEPS_PER_PRINT == 0 {
-                println!("n_step : {}, loss : {loss}", schedule.n_step());
-            }
+            plot_datum_sender.send_loss(loss, schedule);
         }
         if schedule.is_time_to_update_target() {
             agent.copy_control_to_target();
