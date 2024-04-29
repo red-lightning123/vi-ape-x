@@ -1,6 +1,6 @@
 use super::replay::ReplayQueue;
 use super::traits::{Actor, BasicLearner, Persistable, TargetNet};
-use super::{State, Transition};
+use super::{LearningStepInfo, State, Transition};
 use std::fs;
 use std::path::Path;
 
@@ -28,12 +28,12 @@ impl<T: Actor> Actor for QueueReplayWrapper<T> {
 }
 
 impl<T: BasicLearner> QueueReplayWrapper<T> {
-    pub fn train_step(&mut self) -> Option<f32> {
+    pub fn train_step(&mut self) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {
             let batch_transitions = self.memory.sample_batch(BATCH_SIZE);
-            let loss = self.model.train_batch(&batch_transitions);
-            Some(loss)
+            let step_info = self.model.train_batch(&batch_transitions);
+            Some(step_info)
         } else {
             None
         }

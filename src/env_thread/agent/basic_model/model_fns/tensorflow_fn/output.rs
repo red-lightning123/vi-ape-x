@@ -31,3 +31,16 @@ impl<T1: Output, T2: Output> OutputTuple<2> for (T1, T2) {
         )
     }
 }
+
+impl<T1: Output, T2: Output, T3: Output> OutputTuple<3> for (T1, T2, T3) {
+    fn fetch_from(
+        session_run_args: &mut SessionRunArgs,
+        [fetch_token1, fetch_token2, fetch_token3]: [FetchToken; 3],
+    ) -> Self {
+        (
+            Output::fetch_from(session_run_args, fetch_token1),
+            Output::fetch_from(session_run_args, fetch_token2),
+            Output::fetch_from(session_run_args, fetch_token3),
+        )
+    }
+}

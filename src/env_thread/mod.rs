@@ -133,8 +133,9 @@ fn step(
             + (BETA_END - BETA_START) * f64::from(schedule.n_step())
                 / f64::from(N_BETA_ANNEALING_FRAMES);
         let beta = if beta > BETA_END { BETA_END } else { beta };
-        if let Some(loss) = agent.train_step(beta) {
-            plot_datum_sender.send_loss(loss, schedule);
+        if let Some(learning_step) = agent.train_step(beta) {
+            plot_datum_sender.send_loss(learning_step.loss, schedule);
+            plot_datum_sender.send_q_val(learning_step.average_q_val, schedule);
         }
         if schedule.is_time_to_update_target() {
             agent.copy_control_to_target();

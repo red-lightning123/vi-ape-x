@@ -1,5 +1,5 @@
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
-use super::{State, Transition};
+use super::{LearningStepInfo, State, Transition};
 mod model_fns;
 use crate::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
@@ -56,7 +56,7 @@ impl Actor for BasicModel {
 }
 
 impl BasicLearner for BasicModel {
-    fn train_batch(&mut self, batch: &[&Transition]) -> f32 {
+    fn train_batch(&mut self, batch: &[&Transition]) -> LearningStepInfo {
         let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut actions = Vec::with_capacity(32);
@@ -78,7 +78,7 @@ impl BasicLearner for BasicModel {
         let rewards_arg = Tensor::new(&[32]).with_values(&rewards).unwrap();
         let dones_arg = Tensor::new(&[32]).with_values(&dones).unwrap();
 
-        let (loss,): (Tensor<f32>,) = self.fns.train_batch.call(
+        let (loss, average_q_val): (Tensor<f32>, Tensor<f32>) = self.fns.train_batch.call(
             &self.model_bundle.session,
             (
                 states_arg,
@@ -88,7 +88,10 @@ impl BasicLearner for BasicModel {
                 dones_arg,
             ),
         );
-        loss.get(&[])
+        LearningStepInfo {
+            loss: loss.get(&[]),
+            average_q_val: average_q_val.get(&[]),
+        }
     }
 }
 
@@ -100,7 +103,7 @@ impl PrioritizedLearner for BasicModel {
         min_probability: f64,
         replay_memory_len: usize,
         beta: f64,
-    ) -> (f32, Vec<f64>) {
+    ) -> (LearningStepInfo, Vec<f64>) {
         let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut actions = Vec::with_capacity(32);
@@ -149,12 +152,16 @@ impl PrioritizedLearner for BasicModel {
             beta_arg,
         );
 
-        let (loss, abs_td_errors): (Tensor<f32>, Tensor<f32>) = self
+        let (loss, average_q_val, abs_td_errors): (Tensor<f32>, Tensor<f32>, Tensor<f32>) = self
             .fns
             .train_batch_prioritized
             .call(&self.model_bundle.session, args);
+        let learning_step_info = LearningStepInfo {
+            loss: loss.get(&[]),
+            average_q_val: average_q_val.get(&[]),
+        };
         (
-            loss.get(&[]),
+            learning_step_info,
             abs_td_errors.iter().map(|x| *x as f64).collect::<Vec<_>>(),
         )
     }

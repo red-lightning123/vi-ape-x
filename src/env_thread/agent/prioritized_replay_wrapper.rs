@@ -1,6 +1,6 @@
 use super::replay::ReplayPrioritized;
 use super::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
-use super::{State, Transition};
+use super::{LearningStepInfo, State, Transition};
 use std::fs;
 use std::path::Path;
 
@@ -30,13 +30,13 @@ impl<T: Actor> Actor for PrioritizedReplayWrapper<T> {
 }
 
 impl<T: PrioritizedLearner> PrioritizedReplayWrapper<T> {
-    pub fn train_step(&mut self, beta: f64) -> Option<f32> {
+    pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {
             let (batch_indices, batch_probabilities, batch_transitions) =
                 self.memory.sample_batch(BATCH_SIZE);
             let min_probability = self.memory.min_probability();
-            let (loss, batch_abs_td_errors) = self.model.train_batch_prioritized(
+            let (step_info, batch_abs_td_errors) = self.model.train_batch_prioritized(
                 &batch_transitions,
                 &batch_probabilities,
                 min_probability,
@@ -48,7 +48,7 @@ impl<T: PrioritizedLearner> PrioritizedReplayWrapper<T> {
                 &batch_abs_td_errors,
                 self.alpha,
             );
-            Some(loss)
+            Some(step_info)
         } else {
             None
         }

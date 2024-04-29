@@ -149,7 +149,8 @@ class Agent(tf.Module):
             updated_qvals,
             actions
         )
-        return loss
+        avg_target_new_state_qval = tf.math.reduce_mean(target_new_state_qvals)
+        return loss, avg_target_new_state_qval
     @tf.function
     def train_pred_step_prioritized(self, states, new_states, actions, rewards, dones, probabilities, min_probability, replay_memory_len, beta):
         gamma = 0.99
@@ -167,7 +168,8 @@ class Agent(tf.Module):
             replay_memory_len,
             beta
         )
-        return loss, abs_td_errors
+        avg_target_new_state_qval = tf.math.reduce_mean(target_new_state_qvals)
+        return loss, avg_target_new_state_qval, abs_td_errors
     @tf.function
     def copy_control_to_target(self):
         '''

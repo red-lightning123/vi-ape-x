@@ -1,4 +1,4 @@
-use super::{State, Transition};
+use super::{LearningStepInfo, State, Transition};
 use std::path::Path;
 
 pub trait Actor {
@@ -6,7 +6,7 @@ pub trait Actor {
 }
 
 pub trait BasicLearner {
-    fn train_batch(&mut self, batch: &[&Transition]) -> f32;
+    fn train_batch(&mut self, batch: &[&Transition]) -> LearningStepInfo;
 }
 
 pub trait PrioritizedLearner {
@@ -17,7 +17,7 @@ pub trait PrioritizedLearner {
         min_probability: f64,
         replay_memory_len: usize,
         beta: f64,
-    ) -> (f32, Vec<f64>);
+    ) -> (LearningStepInfo, Vec<f64>);
 }
 
 pub trait TargetNet {
