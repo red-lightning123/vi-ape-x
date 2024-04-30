@@ -1,7 +1,8 @@
 use crate::{spawn_env_thread, spawn_game_thread, spawn_plot_thread, spawn_ui_thread};
 use crate::{EnvThreadMessage, GameThreadMessage, PlotThreadMessage, UiThreadMessage};
 use crossbeam_channel::{Receiver, Sender};
-use std::path::{Path, PathBuf};
+use std::fs;
+use std::path::PathBuf;
 use std::thread::JoinHandle;
 
 #[derive(Clone, Debug)]
@@ -107,12 +108,14 @@ enum ThreadMode {
 }
 
 fn save(master_sender: &MasterSender, receiver: &Receiver<MasterThreadMessage>) {
-    master_sender.send_all(MasterMessage::Save(Path::new("saved").to_path_buf()));
+    let saved_path = "saved";
+    fs::create_dir_all(saved_path).unwrap();
+    master_sender.send_all(MasterMessage::Save(saved_path.into()));
     wait_all_done(receiver);
 }
 
 fn load(master_sender: &MasterSender, receiver: &Receiver<MasterThreadMessage>) {
-    master_sender.send_all(MasterMessage::Load(Path::new("load").to_path_buf()));
+    master_sender.send_all(MasterMessage::Load("load".into()));
     wait_all_done(receiver);
 }
 

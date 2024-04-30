@@ -1,6 +1,9 @@
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct Plot {
@@ -51,6 +54,7 @@ impl Plot {
         self.export_json();
     }
     fn export_json(&self) {
+        fs::create_dir_all(&self.output_path).unwrap();
         let file =
             create_file_buf_write(self.output_path.join(&self.fs_name).with_extension("json"))
                 .unwrap();
