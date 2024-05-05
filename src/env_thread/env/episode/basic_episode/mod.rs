@@ -36,7 +36,10 @@ impl BasicEpisode {
         let reward = if terminated {
             0.0
         } else {
-            f64::from(next_score - score)
+            // IMPORTANT: The difference can be negative, so order of operations
+            // is critical here. The difference could overflow if it were
+            // calculated as f64::from(next_score - score)
+            f64::from(next_score) - f64::from(score)
         };
         transition_queue.push_back((
             (state_slice, next_state_slice, action, reward, terminated),
