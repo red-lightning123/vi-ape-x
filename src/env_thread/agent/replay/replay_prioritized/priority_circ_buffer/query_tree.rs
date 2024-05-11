@@ -1,20 +1,23 @@
-use super::{tree::Tree, Zero};
+use super::tree::Tree;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SumTree<V> {
-    tree: Tree<V>,
+pub trait Query<V> {
+    fn default() -> V;
+    fn children_query(tree: &Tree<V>, node: usize) -> V;
 }
 
-impl<V: Zero + Clone + Copy + std::ops::Add<Output = V>> SumTree<V> {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryTree<V, Q: Query<V>> {
+    tree: Tree<V>,
+    _marker: std::marker::PhantomData<Q>,
+}
+
+impl<V: Copy, Q: Query<V>> QueryTree<V, Q> {
     pub fn with_leaf_count(leaf_count: usize) -> Self {
         Self {
-            tree: Tree::new(V::zero(), leaf_count),
+            tree: Tree::new(Q::default(), leaf_count),
+            _marker: std::marker::PhantomData,
         }
-    }
-
-    pub fn first_leaf(&self) -> usize {
-        self.tree.first_leaf()
     }
 
     pub fn children(&self, node: usize) -> (Option<usize>, Option<usize>) {
@@ -23,6 +26,10 @@ impl<V: Zero + Clone + Copy + std::ops::Add<Output = V>> SumTree<V> {
 
     pub fn root(&self) -> usize {
         self.tree.root()
+    }
+
+    pub fn first_leaf(&self) -> usize {
+        self.tree.first_leaf()
     }
 
     pub fn value(&self, node: usize) -> V {
@@ -35,19 +42,10 @@ impl<V: Zero + Clone + Copy + std::ops::Add<Output = V>> SumTree<V> {
         self.update_ancestors(leaf);
     }
 
-    fn children_value_sum(&self, node: usize) -> V {
-        match self.tree.children(node) {
-            (None, None) => V::zero(),
-            (Some(left), None) => self.tree.value(left),
-            (None, Some(right)) => self.tree.value(right),
-            (Some(left), Some(right)) => self.tree.value(left) + self.tree.value(right),
-        }
-    }
-
     fn update_ancestors(&mut self, mut node: usize) {
         while let Some(parent) = self.tree.parent(node) {
-            let sum = self.children_value_sum(parent);
-            self.tree.set_value(parent, sum);
+            let value = Q::children_query(&self.tree, parent);
+            self.tree.set_value(parent, value);
             node = parent;
         }
     }
