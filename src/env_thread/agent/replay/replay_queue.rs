@@ -70,13 +70,14 @@ impl ReplayQueue {
                     };
                 next_state_frame_indices.push(frame_index);
             }
-            transitions.push((
-                (*state_frame_indices).try_into().unwrap(),
-                (*next_state_frame_indices).try_into().unwrap(),
-                transition.action,
-                transition.reward,
-                transition.terminated,
-            ));
+            let transition = SavedTransition {
+                state_frame_indices: (*state_frame_indices).try_into().unwrap(),
+                next_state_frame_indices: (*next_state_frame_indices).try_into().unwrap(),
+                action: transition.action,
+                reward: transition.reward,
+                terminated: transition.terminated,
+            };
+            transitions.push(transition);
         }
         // the experience replay queue can take up a lot of space, therefore we serialize each
         // frame/transition separately in a streaming manner so as to not inadvertently clone
@@ -106,16 +107,20 @@ impl ReplayQueue {
         let mut transitions = VecDeque::with_capacity(self.max_size);
         let mut transitions_file = open_file_buf_read(path.as_ref().join("transitions")).unwrap();
         while has_data_left(&mut transitions_file).unwrap() {
-            let (state_frame_indices, next_state_frame_indices, action, reward, terminated) : SavedTransition = bincode::deserialize_from(&mut transitions_file).unwrap();
-            let state = state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
-            let next_state =
-                next_state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
+            let saved_transition: SavedTransition =
+                bincode::deserialize_from(&mut transitions_file).unwrap();
+            let state = saved_transition
+                .state_frame_indices
+                .map(|frame_index| Rc::clone(&frames[frame_index]));
+            let next_state = saved_transition
+                .next_state_frame_indices
+                .map(|frame_index| Rc::clone(&frames[frame_index]));
             let transition = Transition {
                 state,
                 next_state,
-                action,
-                reward,
-                terminated,
+                action: saved_transition.action,
+                reward: saved_transition.reward,
+                terminated: saved_transition.terminated,
             };
             transitions.push_back(transition);
         }
