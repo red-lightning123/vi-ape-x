@@ -2,6 +2,8 @@ mod traits;
 pub use traits::{Infinity, NegativeInfinity, Zero};
 mod nodes;
 use nodes::{MaxNode, MinNode};
+mod tree;
+use tree::Tree;
 mod sum_tree;
 use sum_tree::SumTree;
 mod max_tree;
