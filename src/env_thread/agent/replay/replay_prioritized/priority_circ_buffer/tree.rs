@@ -11,7 +11,7 @@ pub struct Tree<V> {
     leaf_count: usize,
 }
 
-impl<V: Clone + Copy> Tree<V> {
+impl<V: Copy> Tree<V> {
     pub fn new(value: V, leaf_count: usize) -> Self {
         let leaf_count_prev_power_of_two = leaf_count.next_power_of_two() / 2;
         let tree_len_prev_power_of_two = 2 * leaf_count_prev_power_of_two - 1;

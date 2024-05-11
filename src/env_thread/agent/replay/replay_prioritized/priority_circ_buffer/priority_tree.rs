@@ -15,7 +15,6 @@ pub trait PriorityTree<P> {
 
 pub trait Priority:
     Zero
-    + Clone
     + Copy
     + PartialOrd
     + Add<Output = Self>
@@ -27,7 +26,6 @@ pub trait Priority:
 }
 impl<P> Priority for P where
     P: Zero
-        + Clone
         + Copy
         + PartialOrd
         + Add<Output = Self>
