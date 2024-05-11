@@ -24,7 +24,7 @@ impl TimeLimitedWrapper {
         action: u8,
         next_frame: ImageOwned2,
         next_score: u32,
-        transition_queue: &mut VecDeque<(Transition, u32)>,
+        transition_queue: &mut VecDeque<(Transition, Option<u32>)>,
     ) -> Status {
         let score_exceeded_record = self.receive_next_score(next_score);
         if score_exceeded_record {

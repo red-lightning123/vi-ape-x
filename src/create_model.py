@@ -57,6 +57,8 @@ GRAD_NORM_CLIPPING = 10
 DUELING_GRAD_WEIGHTING = False
 
 LEARNING_RATE = 0.000025
+N_STEPS = 1
+GAMMA = 0.99
 
 JUMP = False
 
@@ -138,11 +140,11 @@ class Agent(tf.Module):
         return tf.argmax(self.predict_qvals(state))
     @tf.function
     def train_pred_step(self, states, new_states, actions, rewards, dones):
-        gamma = 0.99
+        gamma_pow_n = GAMMA**N_STEPS
         control_new_state_qvals = self.control_model(new_states)
         target_new_state_qvals = self.target_model(new_states)
         next_actions = tf.argmax(control_new_state_qvals, axis=1)
-        updated_qvals = rewards + (1 - dones) * gamma * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
+        updated_qvals = rewards + (1 - dones) * gamma_pow_n * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
 
         loss = self.control_model.train_on_batch(
             states,
@@ -153,11 +155,11 @@ class Agent(tf.Module):
         return loss, avg_target_new_state_qval
     @tf.function
     def train_pred_step_prioritized(self, states, new_states, actions, rewards, dones, probabilities, min_probability, replay_memory_len, beta):
-        gamma = 0.99
+        gamma_pow_n = GAMMA**N_STEPS
         control_new_state_qvals = self.control_model(new_states)
         target_new_state_qvals = self.target_model(new_states)
         next_actions = tf.argmax(control_new_state_qvals, axis=1)
-        updated_qvals = rewards + (1 - dones) * gamma * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
+        updated_qvals = rewards + (1 - dones) * gamma_pow_n * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
 
         loss, abs_td_errors = self.control_model.train_on_batch_prioritized(
             states,

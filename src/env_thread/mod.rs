@@ -118,9 +118,8 @@ fn step(
         }
         Err(StepError::BadMessage) => panic!("{THREAD_NAME} thread: bad message"),
     };
-    if let Some((transition, score)) = env.pop_transition() {
-        let terminated = transition.4;
-        if terminated {
+    while let Some((transition, episode_score)) = env.pop_transition() {
+        if let Some(score) = episode_score {
             plot_datum_sender.send_episode_score(score, schedule);
         }
         agent.remember(transition);

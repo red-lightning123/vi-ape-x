@@ -13,7 +13,7 @@ use std::collections::VecDeque;
 pub struct Env {
     bridge: MessageBridge,
     episode: TimeLimitedWrapper,
-    pending_transitions: VecDeque<(Transition, u32)>,
+    pending_transitions: VecDeque<(Transition, Option<u32>)>,
     waiting_hold: bool,
 }
 
@@ -76,7 +76,7 @@ impl Env {
     pub fn state(&self) -> State {
         self.episode.state()
     }
-    pub fn pop_transition(&mut self) -> Option<(Transition, u32)> {
+    pub fn pop_transition(&mut self) -> Option<(Transition, Option<u32>)> {
         self.pending_transitions.pop_front()
     }
     pub const fn n_actions() -> u8 {
