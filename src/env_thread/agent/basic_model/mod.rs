@@ -62,12 +62,12 @@ impl BasicLearner for BasicModel {
         let mut actions = Vec::with_capacity(32);
         let mut rewards = Vec::with_capacity(32);
         let mut dones = Vec::with_capacity(32);
-        for (state, next_state, action, reward, terminated) in batch {
-            states.extend(state_to_pixels(state));
-            next_states.extend(state_to_pixels(next_state));
-            actions.push(*action);
-            rewards.push(*reward as f32);
-            dones.push(f32::from(u8::from(*terminated)));
+        for transition in batch {
+            states.extend(state_to_pixels(&transition.state));
+            next_states.extend(state_to_pixels(&transition.next_state));
+            actions.push(transition.action);
+            rewards.push(transition.reward as f32);
+            dones.push(f32::from(u8::from(transition.terminated)));
         }
 
         let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();
@@ -109,12 +109,12 @@ impl PrioritizedLearner for BasicModel {
         let mut actions = Vec::with_capacity(32);
         let mut rewards = Vec::with_capacity(32);
         let mut dones = Vec::with_capacity(32);
-        for (state, next_state, action, reward, terminated) in batch_transitions {
-            states.extend(state_to_pixels(state));
-            next_states.extend(state_to_pixels(next_state));
-            actions.push(*action);
-            rewards.push(*reward as f32);
-            dones.push(f32::from(u8::from(*terminated)));
+        for transition in batch_transitions {
+            states.extend(state_to_pixels(&transition.state));
+            next_states.extend(state_to_pixels(&transition.next_state));
+            actions.push(transition.action);
+            rewards.push(transition.reward as f32);
+            dones.push(f32::from(u8::from(transition.terminated)));
         }
 
         let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();

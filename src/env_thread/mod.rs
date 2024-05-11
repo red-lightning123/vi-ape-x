@@ -15,7 +15,13 @@ use rand::Rng;
 use std::rc::Rc;
 
 type State = [Rc<ImageOwned2>; 4];
-type Transition = (State, State, u8, f64, bool);
+struct Transition {
+    state: State,
+    next_state: State,
+    action: u8,
+    reward: f64,
+    terminated: bool,
+}
 
 fn state_dims(state: &State) -> (u32, u32) {
     let frame = &state[0];

@@ -121,9 +121,9 @@ fn frames_transitions_serialized(
     let mut transitions: Vec<SavedTransition> = vec![];
     let mut frame_pointers_to_indices = HashMap::new();
     let mut current_frame_index = 0;
-    for (state, next_state, action, reward, terminated) in values {
+    for transition in values {
         let mut state_frame_indices = vec![];
-        for frame in state {
+        for frame in &transition.state {
             let frame_index =
                 if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                     *frame_index
@@ -137,7 +137,7 @@ fn frames_transitions_serialized(
             state_frame_indices.push(frame_index);
         }
         let mut next_state_frame_indices = vec![];
-        for frame in next_state {
+        for frame in &transition.next_state {
             let frame_index =
                 if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                     *frame_index
@@ -153,9 +153,9 @@ fn frames_transitions_serialized(
         transitions.push((
             (*state_frame_indices).try_into().unwrap(),
             (*next_state_frame_indices).try_into().unwrap(),
-            *action,
-            *reward,
-            *terminated,
+            transition.action,
+            transition.reward,
+            transition.terminated,
         ));
     }
     (frames, transitions)
@@ -177,7 +177,14 @@ fn values_deserialized<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transiti
         let state = state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
         let next_state =
             next_state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
-        transitions.push((state, next_state, action, reward, terminated));
+        let transition = Transition {
+            state,
+            next_state,
+            action,
+            reward,
+            terminated,
+        };
+        transitions.push(transition);
     }
     transitions
 }

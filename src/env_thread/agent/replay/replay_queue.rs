@@ -41,9 +41,9 @@ impl ReplayQueue {
         let mut transitions: Vec<SavedTransition> = vec![];
         let mut frame_pointers_to_indices = HashMap::new();
         let mut current_frame_index = 0;
-        for (state, next_state, action, reward, terminated) in &self.transitions {
+        for transition in &self.transitions {
             let mut state_frame_indices = vec![];
-            for frame in state {
+            for frame in &transition.state {
                 let frame_index =
                     if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                         *frame_index
@@ -57,7 +57,7 @@ impl ReplayQueue {
                 state_frame_indices.push(frame_index);
             }
             let mut next_state_frame_indices = vec![];
-            for frame in next_state {
+            for frame in &transition.next_state {
                 let frame_index =
                     if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                         *frame_index
@@ -73,9 +73,9 @@ impl ReplayQueue {
             transitions.push((
                 (*state_frame_indices).try_into().unwrap(),
                 (*next_state_frame_indices).try_into().unwrap(),
-                *action,
-                *reward,
-                *terminated,
+                transition.action,
+                transition.reward,
+                transition.terminated,
             ));
         }
         // the experience replay queue can take up a lot of space, therefore we serialize each
@@ -110,7 +110,14 @@ impl ReplayQueue {
             let state = state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
             let next_state =
                 next_state_frame_indices.map(|frame_index| Rc::clone(&frames[frame_index]));
-            transitions.push_back((state, next_state, action, reward, terminated));
+            let transition = Transition {
+                state,
+                next_state,
+                action,
+                reward,
+                terminated,
+            };
+            transitions.push_back(transition);
         }
         self.transitions = transitions;
     }

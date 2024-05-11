@@ -27,10 +27,14 @@ impl StepMemory {
     ) -> Option<(Transition, Option<u32>)> {
         let transition = if self.step_queue.len() >= self.n {
             let (step, total_reward) = self.pop_front_step().unwrap();
-            Some((
-                (step.state, state.clone(), step.action, total_reward, false),
-                None,
-            ))
+            let transition = Transition {
+                state: step.state,
+                next_state: state.clone(),
+                action: step.action,
+                reward: total_reward,
+                terminated: false,
+            };
+            Some((transition, None))
         } else {
             None
         };
@@ -48,11 +52,16 @@ impl StepMemory {
     ) {
         while let Some((step, total_reward)) = self.pop_front_step() {
             let next_state = step.state.clone();
+            let transition = Transition {
+                state: step.state,
+                next_state,
+                action: step.action,
+                reward: total_reward,
+                terminated: true,
+            };
             let is_final = self.is_empty();
-            transition_queue.push_back((
-                (step.state, next_state, step.action, total_reward, true),
-                if is_final { Some(step.score) } else { None },
-            ));
+            let episode_score = if is_final { Some(step.score) } else { None };
+            transition_queue.push_back((transition, episode_score));
         }
     }
     fn push_back_step(&mut self, step: Step) {
