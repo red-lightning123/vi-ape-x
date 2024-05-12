@@ -1,16 +1,14 @@
 mod saved_transition;
 
 use crate::env_thread::agent::Transition;
-use crate::file_io::{has_data_left, open_file_buf_read};
+use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
 use crate::ImageOwned2;
 use saved_transition::SavedTransition;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
 
-pub fn frames_transitions_serialized<'a, I>(
-    values: I,
-) -> (Vec<&'a Rc<ImageOwned2>>, Vec<SavedTransition>)
+fn transitions_serialized<'a, I>(values: I) -> (Vec<&'a Rc<ImageOwned2>>, Vec<SavedTransition>)
 where
     I: IntoIterator<Item = &'a Transition>,
 {
@@ -59,7 +57,27 @@ where
     (frames, transitions)
 }
 
-pub fn values_deserialized<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transition> {
+pub fn save_transitions<'a, P, I>(path: P, transitions: I)
+where
+    P: AsRef<Path>,
+    I: IntoIterator<Item = &'a Transition>,
+{
+    let (serialized_frames, serialized_transitions) = transitions_serialized(transitions);
+
+    // the experience replay queue can take up a lot of space, therefore we save each
+    // frame/transition separately in a streaming manner so as to not inadvertently clone
+    // the entire collection (which would cause a spike in RAM usage and might result in OOM)
+    let mut frames_file = create_file_buf_write(path.as_ref().join("frames")).unwrap();
+    for frame in serialized_frames {
+        bincode::serialize_into(&mut frames_file, &**frame).unwrap();
+    }
+    let mut transitions_file = create_file_buf_write(path.as_ref().join("transitions")).unwrap();
+    for transition in serialized_transitions {
+        bincode::serialize_into(&mut transitions_file, &transition).unwrap();
+    }
+}
+
+pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transition> {
     let path = path.as_ref();
     let mut frames_file = open_file_buf_read(path.join("frames")).unwrap();
     let mut frames: Vec<Rc<ImageOwned2>> = vec![];

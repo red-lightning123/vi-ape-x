@@ -110,29 +110,16 @@ where
     }
 }
 
-use super::serialize_transitions::{frames_transitions_serialized, values_deserialized};
+use super::transition_saving::{load_transitions, save_transitions};
 use super::Transition;
 use crate::file_io::{create_file_buf_write, open_file_buf_read};
 use std::path::Path;
 
 impl PriorityCircBuffer<f64, Transition> {
     pub fn save<P: AsRef<Path>>(&self, path: P) {
-        // the experience replay queue can take up a lot of space, therefore we serialize each
-        // frame/transition separately in a streaming manner so as to not inadvertently clone
-        // the entire queue (which would cause a spike in RAM usage and might result in OOM)
         let max_size_file = create_file_buf_write(path.as_ref().join("max_size")).unwrap();
         bincode::serialize_into(max_size_file, &self.max_size).unwrap();
-        let (serialized_frames, serialized_transitions) =
-            frames_transitions_serialized(&self.values);
-        let mut frames_file = create_file_buf_write(path.as_ref().join("frames")).unwrap();
-        for frame in serialized_frames {
-            bincode::serialize_into(&mut frames_file, &**frame).unwrap();
-        }
-        let mut transitions_file =
-            create_file_buf_write(path.as_ref().join("transitions")).unwrap();
-        for transition in serialized_transitions {
-            bincode::serialize_into(&mut transitions_file, &transition).unwrap();
-        }
+        save_transitions(path.as_ref(), &self.values);
         let head_file = create_file_buf_write(path.as_ref().join("head")).unwrap();
         bincode::serialize_into(head_file, &self.head).unwrap();
         let first_priority_leaf_file =
@@ -151,8 +138,7 @@ impl PriorityCircBuffer<f64, Transition> {
     pub fn load<P: AsRef<Path>>(&mut self, path: P) {
         let max_size_file = open_file_buf_read(path.as_ref().join("max_size")).unwrap();
         self.max_size = bincode::deserialize_from(max_size_file).unwrap();
-        let deserialized_values = values_deserialized(path.as_ref(), self.max_size);
-        self.values = deserialized_values;
+        self.values = load_transitions(path.as_ref(), self.max_size);
         let head_file = open_file_buf_read(path.as_ref().join("head")).unwrap();
         self.head = bincode::deserialize_from(head_file).unwrap();
         let first_priority_leaf_file =

@@ -1,6 +1,6 @@
 mod priority_circ_buffer;
 
-use super::serialize_transitions;
+use super::transition_saving;
 use crate::env_thread::agent::Transition;
 use priority_circ_buffer::{PriorityCircBuffer, Zero};
 use std::path::Path;
