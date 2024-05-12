@@ -17,7 +17,6 @@ pub struct Plot {
 
 impl Plot {
     pub fn new(output_path: PathBuf, fs_name: PathBuf, data_per_point: usize) -> Self {
-        const DATA_PER_POINT: usize = 10;
         Self {
             points: vec![],
             current_n: 0,
