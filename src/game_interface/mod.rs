@@ -150,7 +150,7 @@ impl<'a> GameInterface<'a> {
         // game will be ready afterwards. However, I haven't found a more
         // precise way to ensure this, so waiting shall suffice. The duration
         // must be long enough for the game to set up
-        std::thread::sleep(std::time::Duration::from_millis(2000));
+        std::thread::sleep(std::time::Duration::from_millis(5000));
         let win_handle = self.wait_for_win_with_pid(process.id());
         let win_dims = self.conn.get_geometry(win_handle).unwrap().reply().unwrap();
         let win_attribs = self
