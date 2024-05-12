@@ -4,7 +4,7 @@ mod plot_datum_sender;
 mod training_schedule;
 
 use crate::{
-    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, Query, ThreadId,
+    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
 use crate::{ImageOwned, ImageOwned2, ImageRef};
@@ -157,7 +157,6 @@ enum ThreadMode {
 
 pub fn spawn_env_thread(
     receiver: Receiver<EnvThreadMessage>,
-    query_receiver: Receiver<Query>,
     master_thread_sender: Sender<MasterThreadMessage>,
     ui_thread_sender: Sender<UiThreadMessage>,
     game_thread_sender: Sender<GameThreadMessage>,
@@ -182,17 +181,6 @@ pub fn spawn_env_thread(
         let mut agent = PrioritizedReplayWrapper::wrap(BasicModel::new(), MEMORY_CAPACITY, ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
-            if let Ok(query) = query_receiver.try_recv() {
-                match query {
-                    Query::NStep => {
-                        master_thread_sender
-                            .send(MasterThreadMessage::QueryReply(
-                                schedule.n_step().to_string(),
-                            ))
-                            .unwrap();
-                    }
-                }
-            }
             match mode {
                 ThreadMode::Held => match receiver.recv().unwrap() {
                     EnvThreadMessage::Master(message) => match message {

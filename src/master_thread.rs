@@ -49,7 +49,6 @@ fn wait_all_done(receiver: &Receiver<MasterThreadMessage>) {
                     break;
                 }
             }
-            _ => panic!("master thread: bad message"),
         }
     }
 }
@@ -58,18 +57,6 @@ fn wait_env_done(receiver: &Receiver<MasterThreadMessage>) {
     match receiver.recv().unwrap() {
         MasterThreadMessage::Done(ThreadId::Env) => {}
         _ => panic!("master thread: bad message"),
-    }
-}
-
-pub enum Query {
-    NStep,
-}
-
-fn query_try_from_str(s: &str) -> Option<Query> {
-    if s == "n_step" {
-        Some(Query::NStep)
-    } else {
-        None
     }
 }
 
@@ -99,7 +86,6 @@ impl ThreadId {
 
 pub enum MasterThreadMessage {
     Done(ThreadId),
-    QueryReply(String),
 }
 
 enum ThreadMode {
@@ -163,8 +149,6 @@ pub fn spawn_master_thread() -> JoinHandle<()> {
             crossbeam_channel::unbounded::<UiThreadMessage>();
         let (env_thread_sender, env_thread_receiver) =
             crossbeam_channel::unbounded::<EnvThreadMessage>();
-        let (env_thread_query_sender, env_thread_query_receiver) =
-            crossbeam_channel::unbounded::<Query>();
         let (game_thread_sender, game_thread_receiver) =
             crossbeam_channel::unbounded::<GameThreadMessage>();
         let (plot_thread_sender, plot_thread_receiver) =
@@ -187,7 +171,6 @@ pub fn spawn_master_thread() -> JoinHandle<()> {
         let plot_thread = spawn_plot_thread(plot_thread_receiver, sender.clone());
         let env_thread = spawn_env_thread(
             env_thread_receiver,
-            env_thread_query_receiver,
             sender,
             ui_thread_sender,
             game_thread_sender,
@@ -230,19 +213,6 @@ pub fn spawn_master_thread() -> JoinHandle<()> {
                     }
                     ThreadMode::Running => eprintln!("command cannot be executed in running mode"),
                 },
-                ["query", val_name] => {
-                    if let Some(query) = query_try_from_str(val_name) {
-                        env_thread_query_sender.send(query).unwrap();
-                        match receiver.recv().unwrap() {
-                            MasterThreadMessage::QueryReply(string) => {
-                                println!("{}", string);
-                            }
-                            _ => panic!("{THREAD_NAME} thread: bad message"),
-                        }
-                    } else {
-                        println!("invalid name given to query command");
-                    }
-                }
                 _ => {
                     println!("invalid command");
                 }

@@ -18,7 +18,7 @@ use game_interface::{GameInterface, GameKey, KeyEventKind};
 use game_thread::{spawn_game_thread, GameThreadMessage};
 use human_interface::HumanInterface;
 use image::{Color2, Color4, ImageOwned, ImageOwned2, ImageRef, ImageRef2, ImageRef4};
-use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, Query, ThreadId};
+use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, ThreadId};
 use plot_thread::{spawn_plot_thread, PlotThreadMessage, PlotType};
 use ui_thread::{spawn_ui_thread, UiThreadMessage};
 use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};
