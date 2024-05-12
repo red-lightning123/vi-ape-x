@@ -1,4 +1,5 @@
 mod shader;
+
 use crate::choose_matching_fbconfigs;
 use crate::GlxContext;
 use crate::Window;

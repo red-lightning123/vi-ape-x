@@ -1,5 +1,4 @@
 mod sum_query;
-use sum_query::SumQuery;
 
 use super::{
     query_tree::{Query, QueryTree},
@@ -7,6 +6,7 @@ use super::{
     Zero,
 };
 use serde::{Deserialize, Serialize};
+use sum_query::SumQuery;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SumTree<V: Copy + Zero + std::ops::Add<Output = V>> {

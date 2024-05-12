@@ -1,20 +1,21 @@
-mod training_schedule;
-use training_schedule::TrainingSchedule;
 mod agent;
-use agent::traits::{Actor, Persistable, TargetNet};
-use agent::{BasicModel, PrioritizedReplayWrapper};
 mod env;
-use env::{Env, StepError};
 mod plot_datum_sender;
+mod training_schedule;
+
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, Query, ThreadId,
     UiThreadMessage,
 };
 use crate::{ImageOwned, ImageOwned2, ImageRef};
+use agent::traits::{Actor, Persistable, TargetNet};
+use agent::{BasicModel, PrioritizedReplayWrapper};
 use crossbeam_channel::{Receiver, Sender};
+use env::{Env, StepError};
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use std::rc::Rc;
+use training_schedule::TrainingSchedule;
 
 type State = [Rc<ImageOwned2>; 4];
 struct Transition {

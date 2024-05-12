@@ -1,6 +1,7 @@
-mod replay_queue;
-pub use replay_queue::ReplayQueue;
 mod replay_prioritized;
-pub use replay_prioritized::ReplayPrioritized;
+mod replay_queue;
 mod saved_transition;
+
+pub use replay_prioritized::ReplayPrioritized;
+pub use replay_queue::ReplayQueue;
 use saved_transition::SavedTransition;

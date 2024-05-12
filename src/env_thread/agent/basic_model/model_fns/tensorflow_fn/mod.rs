@@ -1,14 +1,15 @@
-use tensorflow::{Graph, SavedModelBundle, Session, SessionRunArgs};
-mod arg_location;
-use arg_location::ArgLocation;
-mod output_location;
-use output_location::OutputLocation;
 mod arg;
-use arg::ArgTuple;
-mod output;
-use output::OutputTuple;
+mod arg_location;
 mod each_ref;
+mod output;
+mod output_location;
+
+use arg::ArgTuple;
+use arg_location::ArgLocation;
 use each_ref::each_ref;
+use output::OutputTuple;
+use output_location::OutputLocation;
+use tensorflow::{Graph, SavedModelBundle, Session, SessionRunArgs};
 
 pub struct TensorflowFn<const N: usize, const M: usize> {
     pub arg_locations: [ArgLocation; N],

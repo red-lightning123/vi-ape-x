@@ -1,5 +1,6 @@
 mod v_sync_data;
 mod x_shm_seg;
+
 use crate::keycodes;
 use crate::ImageRef4;
 use crate::Window;

@@ -1,10 +1,11 @@
 mod frame_stack;
+mod step_memory;
+
 use super::{Done, Status};
 use super::{State, Transition};
 use crate::ImageOwned2;
 use frame_stack::FrameStack;
 use std::collections::VecDeque;
-mod step_memory;
 use step_memory::StepMemory;
 
 pub struct BasicEpisode {

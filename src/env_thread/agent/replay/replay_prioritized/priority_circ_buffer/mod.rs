@@ -1,20 +1,21 @@
-mod traits;
-pub use traits::{Infinity, NegativeInfinity, Zero};
+mod max_tree;
+mod min_tree;
 mod nodes;
-use nodes::{MaxNode, MinNode};
+mod priority_tree;
 mod query_tree;
 mod sum_tree;
+mod traits;
 mod tree;
-use sum_tree::SumTree;
-mod max_tree;
+
 use max_tree::MaxTree;
-mod min_tree;
 use min_tree::MinTree;
-mod priority_tree;
+use nodes::{MaxNode, MinNode};
 use priority_tree::{Priority, PriorityTree};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::ops::Div;
+use sum_tree::SumTree;
+pub use traits::{Infinity, NegativeInfinity, Zero};
 
 pub struct PriorityCircBuffer<P: Copy + Zero + std::ops::Add<Output = P> + PartialOrd, V> {
     priorities: SumTree<P>,

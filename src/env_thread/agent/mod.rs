@@ -1,12 +1,13 @@
-use super::{State, Transition};
 mod basic_model;
-pub use basic_model::BasicModel;
 mod prioritized_replay_wrapper;
-pub mod traits;
-pub use prioritized_replay_wrapper::PrioritizedReplayWrapper;
 mod queue_replay_wrapper;
-pub use queue_replay_wrapper::QueueReplayWrapper;
 pub mod replay;
+pub mod traits;
+
+use super::{State, Transition};
+pub use basic_model::BasicModel;
+pub use prioritized_replay_wrapper::PrioritizedReplayWrapper;
+pub use queue_replay_wrapper::QueueReplayWrapper;
 
 pub struct LearningStepInfo {
     pub loss: f32,

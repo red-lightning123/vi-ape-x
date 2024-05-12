@@ -1,11 +1,11 @@
 mod min_query;
-use min_query::MinQuery;
 
 use super::{
     query_tree::{Query, QueryTree},
     tree::Tree,
     Infinity,
 };
+use min_query::MinQuery;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

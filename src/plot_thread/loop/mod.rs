@@ -1,4 +1,5 @@
 mod plot_set;
+
 use crate::{MasterMessage, MasterThreadMessage, ThreadId};
 use crossbeam_channel::{Receiver, Sender};
 pub use plot_set::{PlotSet, PlotType};

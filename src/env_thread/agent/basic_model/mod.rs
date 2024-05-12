@@ -1,6 +1,7 @@
+mod model_fns;
+
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
 use super::{LearningStepInfo, State, Transition};
-mod model_fns;
 use crate::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
 use std::path::Path;

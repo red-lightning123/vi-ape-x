@@ -1,4 +1,5 @@
 mod window;
+
 pub use window::Window;
 
 pub fn choose_matching_fbconfigs(

@@ -1,4 +1,5 @@
 mod plot;
+
 use plot::Plot;
 use std::path::Path;
 

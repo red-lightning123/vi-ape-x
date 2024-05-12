@@ -1,11 +1,11 @@
 mod max_query;
-use max_query::MaxQuery;
 
 use super::{
     query_tree::{Query, QueryTree},
     tree::Tree,
     NegativeInfinity,
 };
+use max_query::MaxQuery;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
