@@ -4,13 +4,15 @@ mod agent;
 use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
 mod env;
+use env::{Env, StepError};
+mod plot_datum_sender;
 use crate::{
-    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, PlotType, Query,
-    ThreadId, UiThreadMessage,
+    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, Query, ThreadId,
+    UiThreadMessage,
 };
 use crate::{ImageOwned, ImageOwned2, ImageRef};
 use crossbeam_channel::{Receiver, Sender};
-use env::{Env, StepError};
+use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use std::rc::Rc;
 
@@ -51,37 +53,6 @@ fn concat_state_frames(state: &State) -> ImageOwned2 {
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())
-}
-
-struct PlotDatumSender {
-    sender: Sender<PlotThreadMessage>,
-}
-
-impl PlotDatumSender {
-    fn new(sender: Sender<PlotThreadMessage>) -> Self {
-        Self { sender }
-    }
-
-    fn send_datum(&self, plot_type: PlotType, datum: f64, schedule: &TrainingSchedule) {
-        self.sender
-            .send(PlotThreadMessage::Datum(
-                plot_type,
-                (f64::from(schedule.n_step()), datum),
-            ))
-            .unwrap();
-    }
-
-    fn send_episode_score(&self, score: u32, schedule: &TrainingSchedule) {
-        self.send_datum(PlotType::EpisodeScore, f64::from(score), schedule);
-    }
-
-    fn send_loss(&self, loss: f32, schedule: &TrainingSchedule) {
-        self.send_datum(PlotType::Loss, f64::from(loss), schedule);
-    }
-
-    fn send_q_val(&self, q_val: f32, schedule: &TrainingSchedule) {
-        self.send_datum(PlotType::QVal, f64::from(q_val), schedule);
-    }
 }
 
 const THREAD_ID: ThreadId = ThreadId::Env;
