@@ -35,14 +35,16 @@ impl ReplayQueue {
         self.transitions.len()
     }
     pub fn save<P: AsRef<Path>>(&self, path: P) {
-        let max_size_file = create_file_buf_write(path.as_ref().join("max_size")).unwrap();
+        let path = path.as_ref();
+        let max_size_file = create_file_buf_write(path.join("max_size")).unwrap();
         bincode::serialize_into(max_size_file, &self.max_size).unwrap();
         save_transitions(path, &self.transitions);
     }
     pub fn load<P: AsRef<Path>>(&mut self, path: P) {
-        let max_size_file = open_file_buf_read(path.as_ref().join("max_size")).unwrap();
+        let path = path.as_ref();
+        let max_size_file = open_file_buf_read(path.join("max_size")).unwrap();
         self.max_size = bincode::deserialize_from(max_size_file).unwrap();
-        let transitions = load_transitions(path.as_ref(), self.max_size);
+        let transitions = load_transitions(path, self.max_size);
         self.transitions = transitions.into();
     }
 }

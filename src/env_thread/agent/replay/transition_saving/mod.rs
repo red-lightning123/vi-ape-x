@@ -62,16 +62,17 @@ where
     P: AsRef<Path>,
     I: IntoIterator<Item = &'a Transition>,
 {
+    let path = path.as_ref();
     let (serialized_frames, serialized_transitions) = transitions_serialized(transitions);
 
     // the experience replay queue can take up a lot of space, therefore we save each
     // frame/transition separately in a streaming manner so as to not inadvertently clone
     // the entire collection (which would cause a spike in RAM usage and might result in OOM)
-    let mut frames_file = create_file_buf_write(path.as_ref().join("frames")).unwrap();
+    let mut frames_file = create_file_buf_write(path.join("frames")).unwrap();
     for frame in serialized_frames {
         bincode::serialize_into(&mut frames_file, &**frame).unwrap();
     }
-    let mut transitions_file = create_file_buf_write(path.as_ref().join("transitions")).unwrap();
+    let mut transitions_file = create_file_buf_write(path.join("transitions")).unwrap();
     for transition in serialized_transitions {
         bincode::serialize_into(&mut transitions_file, &transition).unwrap();
     }
