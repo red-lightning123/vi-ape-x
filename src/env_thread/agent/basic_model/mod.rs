@@ -18,6 +18,7 @@ fn frame_to_pixels(frame: &ImageRef2) -> Vec<u8> {
 
 fn state_to_pixels(state: &State) -> Vec<u8> {
     state
+        .frames()
         .iter()
         .map(|frame| (**frame).as_ref())
         .map(|frame| frame_to_pixels(&frame))

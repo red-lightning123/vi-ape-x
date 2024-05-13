@@ -14,8 +14,10 @@ impl FrameStack {
         self.stack.push_back(Rc::new(frame));
     }
 
-    pub fn as_slice(&mut self) -> &State {
-        <&State>::try_from(&*self.stack.make_contiguous()).unwrap()
+    pub fn as_state(&self) -> State {
+        <[Rc<ImageOwned2>; 4]>::try_from(Vec::from(self.stack.clone()))
+            .expect("frame stack len should be 4")
+            .into()
     }
     pub fn reset_to_current(&mut self) {
         let frame = self.stack.pop_back().unwrap();

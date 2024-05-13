@@ -31,7 +31,7 @@ impl BasicEpisode {
         next_score: u32,
         transition_queue: &mut VecDeque<(Transition, Option<u32>)>,
     ) -> Status {
-        let state_slice = self.state.as_slice().clone();
+        let state = self.state.as_state();
         let score = self.score;
         let terminated = Self::terminated(score, next_score);
         let reward = if terminated {
@@ -44,7 +44,7 @@ impl BasicEpisode {
         };
         self.state.push(next_frame);
         self.score = next_score;
-        if let Some(transition) = self.step_memory.push(state_slice, score, action, reward) {
+        if let Some(transition) = self.step_memory.push(state, score, action, reward) {
             transition_queue.push_back(transition);
         }
         if terminated {
@@ -73,11 +73,7 @@ impl BasicEpisode {
         score >= next_score + TERMINATION_SCORE_THRESHOLD
     }
     pub fn state(&self) -> State {
-        // Two clones are needed here. The first casts the &StateStack
-        // into a &mut StateStack, because as_slice takes &mut self
-        // while this function's signature requires &self. The second
-        // clone extracts an owned State from the resulting &State
-        self.state.clone().as_slice().clone()
+        self.state.as_state()
     }
     pub fn score(&self) -> u32 {
         self.score

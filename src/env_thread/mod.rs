@@ -1,7 +1,9 @@
 mod agent;
 mod env;
 mod plot_datum_sender;
+mod state;
 mod training_schedule;
+mod transition;
 
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
@@ -14,43 +16,9 @@ use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
-use std::rc::Rc;
+use state::State;
 use training_schedule::TrainingSchedule;
-
-type State = [Rc<ImageOwned2>; 4];
-struct Transition {
-    state: State,
-    next_state: State,
-    action: u8,
-    reward: f64,
-    terminated: bool,
-}
-
-fn state_dims(state: &State) -> (u32, u32) {
-    let frame = &state[0];
-    (frame.width(), frame.height())
-}
-
-fn concat_state_frames(state: &State) -> ImageOwned2 {
-    let (width, height) = state_dims(state);
-    let mut concated_image = ImageOwned2::new(
-        width,
-        height * (state.len() as u32),
-        vec![0; 4 * (width * height * (state.len() as u32)) as usize],
-    );
-    for (n_frame, frame) in state.iter().enumerate() {
-        for y in 0..height {
-            for x in 0..width {
-                concated_image.set_pixel_color(
-                    x,
-                    y + (n_frame as u32) * height,
-                    frame.get_pixel_color(x, y),
-                );
-            }
-        }
-    }
-    concated_image
-}
+use transition::Transition;
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())
@@ -68,7 +36,7 @@ fn step(
     plot_datum_sender: &PlotDatumSender,
 ) -> bool {
     let state = env.state();
-    let concated_state = concat_state_frames(&state);
+    let concated_state = state.concat_frames();
     ui_thread_sender
         .send(UiThreadMessage::Frame(concated_state))
         .unwrap();

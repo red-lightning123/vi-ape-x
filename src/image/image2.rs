@@ -109,7 +109,7 @@ impl ImageRef for ImageRef2<'_> {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ImageOwned2 {
     width: u32,
     height: u32,

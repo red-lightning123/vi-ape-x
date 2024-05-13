@@ -18,7 +18,7 @@ where
     let mut current_frame_index = 0;
     for transition in values {
         let mut state_frame_indices = vec![];
-        for frame in &transition.state {
+        for frame in transition.state.frames() {
             let frame_index =
                 if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                     *frame_index
@@ -32,7 +32,7 @@ where
             state_frame_indices.push(frame_index);
         }
         let mut next_state_frame_indices = vec![];
-        for frame in &transition.next_state {
+        for frame in transition.next_state.frames() {
             let frame_index =
                 if let Some(frame_index) = frame_pointers_to_indices.get(&Rc::as_ptr(frame)) {
                     *frame_index
@@ -99,8 +99,8 @@ pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transit
             .next_state_frame_indices
             .map(|frame_index| Rc::clone(&frames[frame_index]));
         let transition = Transition {
-            state,
-            next_state,
+            state: state.into(),
+            next_state: next_state.into(),
             action: saved_transition.action,
             reward: saved_transition.reward,
             terminated: saved_transition.terminated,
