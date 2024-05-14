@@ -1,5 +1,7 @@
-use super::{CompressedState, State};
+use super::{CompressedState, SavedState, State};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct GenericTransition<S> {
     pub state: S,
     pub next_state: S,
@@ -10,3 +12,4 @@ pub struct GenericTransition<S> {
 
 pub type Transition = GenericTransition<State>;
 pub type CompressedTransition = GenericTransition<CompressedState>;
+pub type SavedTransition = GenericTransition<SavedState>;

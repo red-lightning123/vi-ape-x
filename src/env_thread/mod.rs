@@ -18,9 +18,9 @@ use env::{Env, StepError};
 use image::CompressedImageOwned2;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
-use state::{CompressedState, State};
+use state::{CompressedState, SavedState, State};
 use training_schedule::TrainingSchedule;
-use transition::{CompressedTransition, Transition};
+use transition::{CompressedTransition, SavedTransition, Transition};
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())

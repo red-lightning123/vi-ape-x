@@ -1,8 +1,5 @@
-mod saved_transition;
-
-use crate::env_thread::{CompressedImageOwned2, CompressedTransition};
+use crate::env_thread::{CompressedImageOwned2, CompressedTransition, SavedTransition};
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
-use saved_transition::SavedTransition;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
@@ -46,9 +43,11 @@ where
                 };
             next_state_frame_indices.push(frame_index);
         }
+        let state_frame_indices: [usize; 4] = state_frame_indices.try_into().unwrap();
+        let next_state_frame_indices: [usize; 4] = next_state_frame_indices.try_into().unwrap();
         let transition = SavedTransition {
-            state_frame_indices: (*state_frame_indices).try_into().unwrap(),
-            next_state_frame_indices: (*next_state_frame_indices).try_into().unwrap(),
+            state: state_frame_indices.into(),
+            next_state: next_state_frame_indices.into(),
             action: transition.action,
             reward: transition.reward,
             terminated: transition.terminated,
@@ -94,10 +93,12 @@ pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Compres
         let saved_transition: SavedTransition =
             bincode::deserialize_from(&mut transitions_file).unwrap();
         let state = saved_transition
-            .state_frame_indices
+            .state
+            .frames()
             .map(|frame_index| Rc::clone(&frames[frame_index]));
         let next_state = saved_transition
-            .next_state_frame_indices
+            .next_state
+            .frames()
             .map(|frame_index| Rc::clone(&frames[frame_index]));
         let transition = CompressedTransition {
             state: state.into(),
