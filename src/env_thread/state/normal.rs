@@ -1,13 +1,10 @@
 use crate::{ImageOwned, ImageOwned2, ImageRef};
-use std::rc::Rc;
 
-#[derive(Clone)]
-pub struct State([Rc<ImageOwned2>; 4]);
+use super::GenericState;
+
+pub type State = GenericState<ImageOwned2>;
 
 impl State {
-    pub fn frames(&self) -> &[Rc<ImageOwned2>; 4] {
-        &self.0
-    }
     fn frame_dims(&self) -> (u32, u32) {
         let frame = &self.frames()[0];
         (frame.width(), frame.height())
@@ -32,11 +29,5 @@ impl State {
             }
         }
         concated_image
-    }
-}
-
-impl From<[Rc<ImageOwned2>; 4]> for State {
-    fn from(frames: [Rc<ImageOwned2>; 4]) -> Self {
-        Self(frames)
     }
 }

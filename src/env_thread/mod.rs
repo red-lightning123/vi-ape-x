@@ -1,24 +1,26 @@
 mod agent;
 mod env;
+mod image;
 mod plot_datum_sender;
 mod state;
 mod training_schedule;
 mod transition;
 
+use crate::ImageOwned2;
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
-use crate::{ImageOwned, ImageOwned2, ImageRef};
 use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
+use image::CompressedImageOwned2;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
-use state::State;
+use state::{CompressedState, State};
 use training_schedule::TrainingSchedule;
-use transition::Transition;
+use transition::{CompressedTransition, Transition};
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())
@@ -36,7 +38,7 @@ fn step(
     plot_datum_sender: &PlotDatumSender,
 ) -> bool {
     let state = env.state();
-    let concated_state = state.concat_frames();
+    let concated_state = State::concat_frames(&(&state).into());
     ui_thread_sender
         .send(UiThreadMessage::Frame(concated_state))
         .unwrap();

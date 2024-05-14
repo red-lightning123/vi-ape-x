@@ -1,4 +1,4 @@
-use super::{State, Transition};
+use super::{CompressedState, CompressedTransition};
 use std::collections::VecDeque;
 
 pub struct StepMemory {
@@ -20,14 +20,14 @@ impl StepMemory {
     }
     pub fn push(
         &mut self,
-        state: State,
+        state: CompressedState,
         score: u32,
         action: u8,
         reward: f64,
-    ) -> Option<(Transition, Option<u32>)> {
+    ) -> Option<(CompressedTransition, Option<u32>)> {
         let transition = if self.step_queue.len() >= self.n {
             let (step, total_reward) = self.pop_front_step().unwrap();
-            let transition = Transition {
+            let transition = CompressedTransition {
                 state: step.state,
                 next_state: state.clone(),
                 action: step.action,
@@ -48,11 +48,11 @@ impl StepMemory {
     }
     pub fn pop_terminated_transitions_into(
         &mut self,
-        transition_queue: &mut VecDeque<(Transition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(CompressedTransition, Option<u32>)>,
     ) {
         while let Some((step, total_reward)) = self.pop_front_step() {
             let next_state = step.state.clone();
-            let transition = Transition {
+            let transition = CompressedTransition {
                 state: step.state,
                 next_state,
                 action: step.action,
@@ -84,7 +84,7 @@ impl StepMemory {
 }
 
 struct Step {
-    state: State,
+    state: CompressedState,
     score: u32,
     action: u8,
     reward: f64,

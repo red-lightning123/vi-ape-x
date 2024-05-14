@@ -2,9 +2,9 @@ mod sampling;
 mod save_load;
 
 use super::transition_saving;
+use super::{CompressedTransition, PriorityCircBuffer};
 use super::{MaxTree, MinTree, SumTree};
 use super::{Priority, PriorityTree};
-use super::{PriorityCircBuffer, Transition};
 
 impl<P: Priority, V> PriorityCircBuffer<P, V> {
     pub fn with_max_size(max_size: usize) -> Self {

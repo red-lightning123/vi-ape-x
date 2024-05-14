@@ -1,7 +1,7 @@
 mod model_fns;
 
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
-use super::{LearningStepInfo, State, Transition};
+use super::{CompressedState, CompressedTransition, LearningStepInfo, State};
 use crate::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
 use std::path::Path;
@@ -16,11 +16,12 @@ fn frame_to_pixels(frame: &ImageRef2) -> Vec<u8> {
     [plane_0, plane_1].concat()
 }
 
-fn state_to_pixels(state: &State) -> Vec<u8> {
+fn state_to_pixels(state: &CompressedState) -> Vec<u8> {
+    let state: State = state.into();
     state
         .frames()
         .iter()
-        .map(|frame| (**frame).as_ref())
+        .map(|frame| frame.as_ref())
         .map(|frame| frame_to_pixels(&frame))
         .collect::<Vec<_>>()
         .concat()
@@ -43,7 +44,7 @@ impl BasicModel {
 }
 
 impl Actor for BasicModel {
-    fn best_action(&self, state: &State) -> u8 {
+    fn best_action(&self, state: &CompressedState) -> u8 {
         let state_values = state_to_pixels(state);
         let state_arg = Tensor::new(&[8, 72, 128])
             .with_values(&state_values)
@@ -58,7 +59,7 @@ impl Actor for BasicModel {
 }
 
 impl BasicLearner for BasicModel {
-    fn train_batch(&mut self, batch: &[&Transition]) -> LearningStepInfo {
+    fn train_batch(&mut self, batch: &[&CompressedTransition]) -> LearningStepInfo {
         let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
         let mut actions = Vec::with_capacity(32);
@@ -100,7 +101,7 @@ impl BasicLearner for BasicModel {
 impl PrioritizedLearner for BasicModel {
     fn train_batch_prioritized(
         &mut self,
-        batch_transitions: &[&Transition],
+        batch_transitions: &[&CompressedTransition],
         batch_probabilities: &[f64],
         min_probability: f64,
         replay_memory_len: usize,

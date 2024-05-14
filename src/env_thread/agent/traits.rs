@@ -1,18 +1,18 @@
-use super::{LearningStepInfo, State, Transition};
+use super::{CompressedState, CompressedTransition, LearningStepInfo};
 use std::path::Path;
 
 pub trait Actor {
-    fn best_action(&self, state: &State) -> u8;
+    fn best_action(&self, state: &CompressedState) -> u8;
 }
 
 pub trait BasicLearner {
-    fn train_batch(&mut self, batch: &[&Transition]) -> LearningStepInfo;
+    fn train_batch(&mut self, batch: &[&CompressedTransition]) -> LearningStepInfo;
 }
 
 pub trait PrioritizedLearner {
     fn train_batch_prioritized(
         &mut self,
-        batch_transitions: &[&Transition],
+        batch_transitions: &[&CompressedTransition],
         batch_probabilities: &[f64],
         min_probability: f64,
         replay_memory_len: usize,

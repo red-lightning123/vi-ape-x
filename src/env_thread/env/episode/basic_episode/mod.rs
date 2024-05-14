@@ -1,9 +1,9 @@
 mod frame_stack;
 mod step_memory;
 
+use super::{CompressedState, CompressedTransition};
 use super::{Done, Status};
-use super::{State, Transition};
-use crate::ImageOwned2;
+use crate::env_thread::CompressedImageOwned2;
 use frame_stack::FrameStack;
 use std::collections::VecDeque;
 use step_memory::StepMemory;
@@ -15,7 +15,7 @@ pub struct BasicEpisode {
 }
 
 impl BasicEpisode {
-    pub fn new(frame: ImageOwned2, score: u32) -> Self {
+    pub fn new(frame: CompressedImageOwned2, score: u32) -> Self {
         const N_STEPS: usize = 1;
         const GAMMA: f64 = 0.99;
         Self {
@@ -27,9 +27,9 @@ impl BasicEpisode {
     pub fn step(
         &mut self,
         action: u8,
-        next_frame: ImageOwned2,
+        next_frame: CompressedImageOwned2,
         next_score: u32,
-        transition_queue: &mut VecDeque<(Transition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(CompressedTransition, Option<u32>)>,
     ) -> Status {
         let state = self.state.as_state();
         let score = self.score;
@@ -72,7 +72,7 @@ impl BasicEpisode {
         const TERMINATION_SCORE_THRESHOLD: u32 = 10;
         score >= next_score + TERMINATION_SCORE_THRESHOLD
     }
-    pub fn state(&self) -> State {
+    pub fn state(&self) -> CompressedState {
         self.state.as_state()
     }
     pub fn score(&self) -> u32 {

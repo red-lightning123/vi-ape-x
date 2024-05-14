@@ -1,9 +1,9 @@
 mod episode;
 mod message_bridge;
 
-use super::{EnvThreadMessage, State, Transition};
+use super::{CompressedState, CompressedTransition, EnvThreadMessage};
+use crate::env_thread::CompressedImageOwned2;
 use crate::GameThreadMessage;
-use crate::ImageOwned2;
 use crossbeam_channel::{Receiver, Sender};
 use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
 pub use message_bridge::StepError;
@@ -13,7 +13,7 @@ use std::collections::VecDeque;
 pub struct Env {
     bridge: MessageBridge,
     episode: TimeLimitedWrapper,
-    pending_transitions: VecDeque<(Transition, Option<u32>)>,
+    pending_transitions: VecDeque<(CompressedTransition, Option<u32>)>,
     waiting_hold: bool,
 }
 
@@ -30,7 +30,7 @@ impl Env {
         } = reply;
         Ok(Self {
             bridge,
-            episode: TimeLimitedWrapper::new(BasicEpisode::new(frame, score)),
+            episode: TimeLimitedWrapper::new(BasicEpisode::new((&frame).into(), score)),
             pending_transitions: VecDeque::new(),
             waiting_hold: received_wait_for_hold,
         })
@@ -62,7 +62,7 @@ impl Env {
         self.episode = TimeLimitedWrapper::new(BasicEpisode::new(frame, score));
         Ok(())
     }
-    fn send(&mut self, request: Request) -> Result<(ImageOwned2, u32), StepError> {
+    fn send(&mut self, request: Request) -> Result<(CompressedImageOwned2, u32), StepError> {
         let Reply {
             frame,
             score,
@@ -71,12 +71,12 @@ impl Env {
         if received_wait_for_hold {
             self.waiting_hold = true;
         }
-        Ok((frame, score))
+        Ok(((&frame).into(), score))
     }
-    pub fn state(&self) -> State {
+    pub fn state(&self) -> CompressedState {
         self.episode.state()
     }
-    pub fn pop_transition(&mut self) -> Option<(Transition, Option<u32>)> {
+    pub fn pop_transition(&mut self) -> Option<(CompressedTransition, Option<u32>)> {
         self.pending_transitions.pop_front()
     }
     pub const fn n_actions() -> u8 {

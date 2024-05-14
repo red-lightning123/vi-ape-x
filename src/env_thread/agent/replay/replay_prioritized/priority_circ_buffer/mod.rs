@@ -9,7 +9,7 @@ mod traits;
 mod tree;
 
 use super::transition_saving;
-use super::Transition;
+use super::CompressedTransition;
 use max_tree::MaxTree;
 use min_tree::MinTree;
 use nodes::{MaxNode, MinNode};

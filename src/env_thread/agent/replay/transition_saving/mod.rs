@@ -1,16 +1,17 @@
 mod saved_transition;
 
-use crate::env_thread::agent::Transition;
+use crate::env_thread::{CompressedImageOwned2, CompressedTransition};
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
-use crate::ImageOwned2;
 use saved_transition::SavedTransition;
 use std::collections::HashMap;
 use std::path::Path;
 use std::rc::Rc;
 
-fn transitions_serialized<'a, I>(values: I) -> (Vec<&'a Rc<ImageOwned2>>, Vec<SavedTransition>)
+fn transitions_serialized<'a, I>(
+    values: I,
+) -> (Vec<&'a Rc<CompressedImageOwned2>>, Vec<SavedTransition>)
 where
-    I: IntoIterator<Item = &'a Transition>,
+    I: IntoIterator<Item = &'a CompressedTransition>,
 {
     let mut frames = vec![];
     let mut transitions: Vec<SavedTransition> = vec![];
@@ -60,7 +61,7 @@ where
 pub fn save_transitions<'a, P, I>(path: P, transitions: I)
 where
     P: AsRef<Path>,
-    I: IntoIterator<Item = &'a Transition>,
+    I: IntoIterator<Item = &'a CompressedTransition>,
 {
     let path = path.as_ref();
     let (serialized_frames, serialized_transitions) = transitions_serialized(transitions);
@@ -78,10 +79,10 @@ where
     }
 }
 
-pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transition> {
+pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<CompressedTransition> {
     let path = path.as_ref();
     let mut frames_file = open_file_buf_read(path.join("frames")).unwrap();
-    let mut frames: Vec<Rc<ImageOwned2>> = vec![];
+    let mut frames: Vec<Rc<CompressedImageOwned2>> = vec![];
     while has_data_left(&mut frames_file).unwrap() {
         let frame = bincode::deserialize_from(&mut frames_file).unwrap();
         let frame = Rc::new(frame);
@@ -98,7 +99,7 @@ pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Transit
         let next_state = saved_transition
             .next_state_frame_indices
             .map(|frame_index| Rc::clone(&frames[frame_index]));
-        let transition = Transition {
+        let transition = CompressedTransition {
             state: state.into(),
             next_state: next_state.into(),
             action: saved_transition.action,
