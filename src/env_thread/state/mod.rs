@@ -9,6 +9,6 @@ pub use normal::State;
 
 impl From<&CompressedState> for State {
     fn from(state: &CompressedState) -> Self {
-        Self::from(state.frames().clone().map(|image| image.as_ref().into()))
+        Self::from(state.frames().each_ref().map(|image| image.as_ref().into()))
     }
 }

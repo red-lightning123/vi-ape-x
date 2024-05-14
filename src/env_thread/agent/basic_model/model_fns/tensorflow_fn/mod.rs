@@ -1,12 +1,10 @@
 mod arg;
 mod arg_location;
-mod each_ref;
 mod output;
 mod output_location;
 
 use arg::ArgTuple;
 use arg_location::ArgLocation;
-use each_ref::each_ref;
 use output::OutputTuple;
 use output_location::OutputLocation;
 use tensorflow::{Graph, SavedModelBundle, Session, SessionRunArgs};
@@ -50,7 +48,9 @@ impl<const N: usize, const M: usize> TensorflowFn<N, M> {
 
         args.feed_to(&mut session_run_args, &self.arg_locations);
 
-        let fetch_tokens = each_ref(&self.output_locations)
+        let fetch_tokens = self
+            .output_locations
+            .each_ref()
             .map(|location| session_run_args.request_fetch(location.op(), location.index()));
 
         session
