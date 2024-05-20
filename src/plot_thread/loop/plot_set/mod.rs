@@ -19,7 +19,7 @@ impl PlotSet {
     pub fn new<P: AsRef<Path>>(output_path: P) -> Self {
         let output_path = output_path.as_ref();
         Self {
-            episode_score: Plot::new(output_path.into(), "episode_score".into(), 10),
+            episode_score: Plot::new(output_path.into(), "episode_score".into(), 1),
             loss: Plot::new(output_path.into(), "loss".into(), 10000),
             q_val: Plot::new(output_path.into(), "q_val".into(), 10000),
         }
