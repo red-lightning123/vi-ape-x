@@ -18,10 +18,6 @@ impl<P: Priority> PriorityTree<P> {
         }
     }
 
-    pub fn first_leaf(&self) -> usize {
-        self.first_leaf
-    }
-
     pub fn min(&self) -> Option<P> {
         self.min_tree.value(self.min_tree.root()).into()
     }
@@ -34,11 +30,13 @@ impl<P: Priority> PriorityTree<P> {
         self.sum_tree.value(self.sum_tree.root())
     }
 
-    pub fn priority(&self, leaf: usize) -> P {
+    pub fn priority(&self, index: usize) -> P {
+        let leaf = self.first_leaf + index;
         self.sum_tree.value(leaf)
     }
 
-    pub fn update(&mut self, leaf: usize, priority: P) {
+    pub fn update(&mut self, index: usize, priority: P) {
+        let leaf = self.first_leaf + index;
         self.sum_tree.update_value(leaf, priority);
         self.min_tree.update_value(leaf, priority.into());
         self.max_tree.update_value(leaf, priority.into());

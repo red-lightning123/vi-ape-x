@@ -5,8 +5,6 @@ use rand::Rng;
 
 impl<P: Priority> SumTree<P> {
     fn sample_by_priority_sum_from_left(&self, mut priority_sum_from_left: P) -> usize {
-        // TODO: the actual tree node index is an implementation
-        // detail so it should be encapsulated in a wrapper type
         let mut node = self.root();
         loop {
             match self.children(node) {

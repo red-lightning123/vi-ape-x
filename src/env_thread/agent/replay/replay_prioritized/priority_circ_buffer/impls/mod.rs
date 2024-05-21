@@ -16,8 +16,7 @@ impl<P: Priority, V> PriorityCircBuffer<P, V> {
     }
 
     pub fn push(&mut self, priority: P, value: V) {
-        let leaf = self.priorities.first_leaf() + self.head;
-        self.update_priority(leaf, priority);
+        self.update_priority(self.head, priority);
         if self.head == self.values.len() {
             self.values.push(value);
         } else {
@@ -41,8 +40,8 @@ impl<P: Priority, V> PriorityCircBuffer<P, V> {
         self.priorities.total()
     }
 
-    pub fn update_priority(&mut self, leaf: usize, priority: P) {
-        self.priorities.update(leaf, priority);
+    pub fn update_priority(&mut self, index: usize, priority: P) {
+        self.priorities.update(index, priority);
     }
 
     pub fn len(&self) -> usize {

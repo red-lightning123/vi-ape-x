@@ -16,9 +16,8 @@ where
         let index = self
             .priorities
             .sample_from_range(range_start, range_end, rng);
-        let value_index = index - self.priorities.first_leaf();
         let priority = self.priorities.priority(index);
-        let value = &self.values[value_index];
+        let value = &self.values[index];
         (index, priority, value)
     }
     pub fn sample<R>(&self, rng: &mut R) -> (usize, P, &V)
@@ -26,9 +25,8 @@ where
         R: Rng,
     {
         let index = self.priorities.sample(rng);
-        let value_index = index - self.priorities.first_leaf();
         let priority = self.priorities.priority(index);
-        let value = &self.values[value_index];
+        let value = &self.values[index];
         (index, priority, value)
     }
 }
