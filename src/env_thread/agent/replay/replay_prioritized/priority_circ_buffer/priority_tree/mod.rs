@@ -12,9 +12,11 @@ use max_tree::MaxTree;
 use min_tree::MinTree;
 use nodes::{MaxNode, MinNode};
 pub use priority::Priority;
+use serde::{Deserialize, Serialize};
 use sum_tree::SumTree;
 pub use traits::{Infinity, NegativeInfinity, Zero};
 
+#[derive(Serialize, Deserialize)]
 pub struct PriorityTree<P: Priority> {
     sum_tree: SumTree<P>,
     min_tree: MinTree<MinNode<P>>,
