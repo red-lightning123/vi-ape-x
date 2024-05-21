@@ -16,7 +16,7 @@ pub struct BasicEpisode {
 
 impl BasicEpisode {
     pub fn new(frame: CompressedImageOwned2, score: u32) -> Self {
-        const N_STEPS: usize = 1;
+        const N_STEPS: usize = 3;
         const GAMMA: f64 = 0.99;
         Self {
             step_memory: StepMemory::new(N_STEPS, GAMMA),
