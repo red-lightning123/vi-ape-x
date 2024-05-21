@@ -1,5 +1,5 @@
+use super::Priority;
 use super::PriorityCircBuffer;
-use super::{Priority, PriorityTree};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::ops::Div;
@@ -16,8 +16,8 @@ where
         let index = self
             .priorities
             .sample_from_range(range_start, range_end, rng);
-        let value_index = index - self.first_priority_leaf;
-        let priority = self.priorities.value(index);
+        let value_index = index - self.priorities.first_leaf();
+        let priority = self.priorities.priority(index);
         let value = &self.values[value_index];
         (index, priority, value)
     }
@@ -25,11 +25,9 @@ where
     where
         R: Rng,
     {
-        // TODO: the actual tree node index is an implementation
-        // detail so it should be encapsulated in a wrapper type
         let index = self.priorities.sample(rng);
-        let value_index = index - self.first_priority_leaf;
-        let priority = self.priorities.value(index);
+        let value_index = index - self.priorities.first_leaf();
+        let priority = self.priorities.priority(index);
         let value = &self.values[value_index];
         (index, priority, value)
     }

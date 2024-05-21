@@ -1,43 +1,12 @@
+use super::Priority;
 use super::SumTree;
-use super::Zero;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
-use std::ops::{Add, Div, Mul, Sub, SubAssign};
-
-pub trait PriorityTree<P> {
-    fn sample<R>(&self, rng: &mut R) -> usize
-    where
-        R: Rng;
-    fn sample_from_range<R>(&self, range_start: P, range_end: P, rng: &mut R) -> usize
-    where
-        R: Rng;
-}
-
-pub trait Priority:
-    Zero
-    + Copy
-    + PartialOrd
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + SubAssign
-    + Mul<Output = Self>
-    + Div<Output = Self>
-{
-}
-impl<P> Priority for P where
-    P: Zero
-        + Copy
-        + PartialOrd
-        + Add<Output = Self>
-        + Sub<Output = Self>
-        + SubAssign
-        + Mul<Output = Self>
-        + Div<Output = Self>
-{
-}
 
 impl<P: Priority> SumTree<P> {
     fn sample_by_priority_sum_from_left(&self, mut priority_sum_from_left: P) -> usize {
+        // TODO: the actual tree node index is an implementation
+        // detail so it should be encapsulated in a wrapper type
         let mut node = self.root();
         loop {
             match self.children(node) {
@@ -59,11 +28,11 @@ impl<P: Priority> SumTree<P> {
     }
 }
 
-impl<P: Priority> PriorityTree<P> for SumTree<P>
+impl<P: Priority> SumTree<P>
 where
     Standard: Distribution<P>,
 {
-    fn sample_from_range<R>(&self, range_start: P, range_end: P, rng: &mut R) -> usize
+    pub fn sample_from_range<R>(&self, range_start: P, range_end: P, rng: &mut R) -> usize
     where
         R: Rng,
     {
@@ -72,7 +41,7 @@ where
         let point_scaled = point_chosen * priority_total;
         self.sample_by_priority_sum_from_left(point_scaled)
     }
-    fn sample<R>(&self, rng: &mut R) -> usize
+    pub fn sample<R>(&self, rng: &mut R) -> usize
     where
         R: Rng,
     {
