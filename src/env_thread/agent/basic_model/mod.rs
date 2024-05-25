@@ -60,11 +60,12 @@ impl Actor for BasicModel {
 
 impl BasicLearner for BasicModel {
     fn train_batch(&mut self, batch: &[&CompressedTransition]) -> LearningStepInfo {
-        let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
-        let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
-        let mut actions = Vec::with_capacity(32);
-        let mut rewards = Vec::with_capacity(32);
-        let mut dones = Vec::with_capacity(32);
+        let batch_len = batch.len();
+        let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut next_states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut actions = Vec::with_capacity(batch_len);
+        let mut rewards = Vec::with_capacity(batch_len);
+        let mut dones = Vec::with_capacity(batch_len);
         for transition in batch {
             states.extend(state_to_pixels(&transition.state));
             next_states.extend(state_to_pixels(&transition.next_state));
@@ -73,13 +74,16 @@ impl BasicLearner for BasicModel {
             dones.push(f32::from(u8::from(transition.terminated)));
         }
 
-        let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();
-        let next_states_arg = Tensor::new(&[32, 8, 72, 128])
+        let batch_len = batch_len.try_into().unwrap();
+        let states_arg = Tensor::new(&[batch_len, 8, 72, 128])
+            .with_values(&states)
+            .unwrap();
+        let next_states_arg = Tensor::new(&[batch_len, 8, 72, 128])
             .with_values(&next_states)
             .unwrap();
-        let actions_arg = Tensor::new(&[32]).with_values(&actions).unwrap();
-        let rewards_arg = Tensor::new(&[32]).with_values(&rewards).unwrap();
-        let dones_arg = Tensor::new(&[32]).with_values(&dones).unwrap();
+        let actions_arg = Tensor::new(&[batch_len]).with_values(&actions).unwrap();
+        let rewards_arg = Tensor::new(&[batch_len]).with_values(&rewards).unwrap();
+        let dones_arg = Tensor::new(&[batch_len]).with_values(&dones).unwrap();
 
         let (loss, average_q_val): (Tensor<f32>, Tensor<f32>) = self.fns.train_batch.call(
             &self.model_bundle.session,
@@ -107,11 +111,12 @@ impl PrioritizedLearner for BasicModel {
         replay_memory_len: usize,
         beta: f64,
     ) -> (LearningStepInfo, Vec<f64>) {
-        let mut states = Vec::with_capacity(32 * 8 * 72 * 128);
-        let mut next_states = Vec::with_capacity(32 * 8 * 72 * 128);
-        let mut actions = Vec::with_capacity(32);
-        let mut rewards = Vec::with_capacity(32);
-        let mut dones = Vec::with_capacity(32);
+        let batch_len = batch_transitions.len();
+        let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut next_states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut actions = Vec::with_capacity(batch_len);
+        let mut rewards = Vec::with_capacity(batch_len);
+        let mut dones = Vec::with_capacity(batch_len);
         for transition in batch_transitions {
             states.extend(state_to_pixels(&transition.state));
             next_states.extend(state_to_pixels(&transition.next_state));
@@ -120,14 +125,17 @@ impl PrioritizedLearner for BasicModel {
             dones.push(f32::from(u8::from(transition.terminated)));
         }
 
-        let states_arg = Tensor::new(&[32, 8, 72, 128]).with_values(&states).unwrap();
-        let next_states_arg = Tensor::new(&[32, 8, 72, 128])
+        let batch_len = batch_len.try_into().unwrap();
+        let states_arg = Tensor::new(&[batch_len, 8, 72, 128])
+            .with_values(&states)
+            .unwrap();
+        let next_states_arg = Tensor::new(&[batch_len, 8, 72, 128])
             .with_values(&next_states)
             .unwrap();
-        let actions_arg = Tensor::new(&[32]).with_values(&actions).unwrap();
-        let rewards_arg = Tensor::new(&[32]).with_values(&rewards).unwrap();
-        let dones_arg = Tensor::new(&[32]).with_values(&dones).unwrap();
-        let probabilities_arg = Tensor::new(&[32])
+        let actions_arg = Tensor::new(&[batch_len]).with_values(&actions).unwrap();
+        let rewards_arg = Tensor::new(&[batch_len]).with_values(&rewards).unwrap();
+        let dones_arg = Tensor::new(&[batch_len]).with_values(&dones).unwrap();
+        let probabilities_arg = Tensor::new(&[batch_len])
             .with_values(
                 &batch_probabilities
                     .iter()
