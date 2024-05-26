@@ -1,8 +1,4 @@
-mod compressed_image;
-mod state;
-mod transition;
-
-use transition::CompressedTransition;
+use replay_data::CompressedTransition;
 
 pub enum LearnerRequest {
     GetParams,

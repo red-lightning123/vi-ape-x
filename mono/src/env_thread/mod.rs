@@ -1,10 +1,7 @@
 mod agent;
-mod compressed_image;
 mod env;
 mod plot_datum_sender;
-mod state;
 mod training_schedule;
-mod transition;
 
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
@@ -12,15 +9,15 @@ use crate::{
 };
 use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
-use compressed_image::CompressedImageOwned2;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
-use state::{CompressedState, SavedState, State};
+use replay_data::CompressedImageOwned2;
+use replay_data::{CompressedState, SavedState, State};
+use replay_data::{CompressedTransition, SavedTransition, Transition};
 use training_schedule::TrainingSchedule;
-use transition::{CompressedTransition, SavedTransition, Transition};
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..Env::n_actions())

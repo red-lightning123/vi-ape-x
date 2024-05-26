@@ -8,4 +8,5 @@ members = [
   "mono",
   "packets",
   "replay",
+  "replay_data",
 ]
