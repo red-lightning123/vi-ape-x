@@ -1,7 +1,7 @@
 use super::EnvThreadMessage;
 use crate::GameThreadMessage;
-use crate::ImageOwned2;
 use crossbeam_channel::{Receiver, Sender};
+use image::ImageOwned2;
 
 pub enum Request {
     Action(u8),

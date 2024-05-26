@@ -1,6 +1,5 @@
-use crate::{ImageOwned, ImageOwned2, ImageRef};
-
 use super::GenericState;
+use image::{ImageOwned, ImageOwned2, ImageRef};
 
 pub type State = GenericState<ImageOwned2>;
 

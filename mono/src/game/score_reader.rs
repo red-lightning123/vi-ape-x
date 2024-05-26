@@ -1,5 +1,5 @@
-use crate::Color4;
-use crate::{ImageOwned, ImageRef, ImageRef4};
+use image::Color4;
+use image::{ImageOwned, ImageRef, ImageRef4};
 use std::collections::HashMap;
 
 pub enum ScoreReaderError {

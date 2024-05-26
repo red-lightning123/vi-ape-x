@@ -2,9 +2,9 @@ mod v_sync_data;
 mod x_shm_seg;
 
 use crate::keycodes;
-use crate::ImageRef4;
 use crate::Window;
 use crate::X11Display;
+use image::ImageRef4;
 use std::cell::OnceCell;
 use std::process::Command;
 use v_sync_data::VSyncData;

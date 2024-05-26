@@ -1,7 +1,7 @@
 mod score_reader;
 
-use crate::ImageRef4;
 use crate::{GameInterface, GameKey, KeyEventKind};
+use image::ImageRef4;
 use score_reader::{ScoreReader, ScoreReaderError};
 
 pub struct Game<'a> {

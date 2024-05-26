@@ -2,7 +2,7 @@ mod model_fns;
 
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
 use super::{CompressedState, CompressedTransition, LearningStepInfo, State};
-use crate::{ImageOwned, ImageRef2};
+use image::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
 use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};

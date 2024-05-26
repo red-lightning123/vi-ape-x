@@ -1,21 +1,21 @@
 mod agent;
+mod compressed_image;
 mod env;
-mod image;
 mod plot_datum_sender;
 mod state;
 mod training_schedule;
 mod transition;
 
-use crate::ImageOwned2;
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
 use agent::traits::{Actor, Persistable, TargetNet};
 use agent::{BasicModel, PrioritizedReplayWrapper};
+use compressed_image::CompressedImageOwned2;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
-use image::CompressedImageOwned2;
+use image::ImageOwned2;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use state::{CompressedState, SavedState, State};

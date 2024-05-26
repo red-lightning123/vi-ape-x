@@ -1,9 +1,9 @@
 use crate::game_interface::{GameKey, KeyEventKind};
 use crate::Game;
-use crate::{Color2, Color4};
 use crate::{EnvThreadMessage, MasterMessage, MasterThreadMessage, ThreadId, UiThreadMessage};
-use crate::{ImageOwned, ImageOwned2, ImageRef, ImageRef4};
 use crossbeam_channel::{Receiver, Sender};
+use image::{Color2, Color4};
+use image::{ImageOwned, ImageOwned2, ImageRef, ImageRef4};
 
 enum ThreadMode {
     Running(std::time::Instant),

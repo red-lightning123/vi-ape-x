@@ -3,7 +3,7 @@ mod generic;
 mod normal;
 mod saved;
 
-use super::image::CompressedImageOwned2;
+use super::compressed_image::CompressedImageOwned2;
 pub use compressed::CompressedState;
 use generic::GenericState;
 pub use normal::State;

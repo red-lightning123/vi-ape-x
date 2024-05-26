@@ -2,10 +2,10 @@ mod spawn_dummy_ui_thread;
 mod spawn_egui_ui_thread;
 mod spawn_gl_ui_thread;
 
-use crate::ImageOwned2;
 use crate::Window;
 use crate::{MasterMessage, MasterThreadMessage};
 use crossbeam_channel::{Receiver, Sender};
+use image::ImageOwned2;
 use spawn_dummy_ui_thread::spawn_dummy_ui_thread;
 use spawn_egui_ui_thread::spawn_egui_ui_thread;
 use spawn_gl_ui_thread::spawn_gl_ui_thread;
