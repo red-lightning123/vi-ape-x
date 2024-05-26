@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "actor"
+version = "0.1.0"
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -386,6 +390,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "learner"
+version = "0.1.0"
+
+[[package]]
 name = "libc"
 version = "0.2.148"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -425,6 +433,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7810e0be55b428ada41041c41f32c9f1a42817901b4ccf45fa3d4b6561e74c7"
 dependencies = [
  "adler",
+]
+
+[[package]]
+name = "mono"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "crossbeam-channel",
+ "glow",
+ "jemallocator",
+ "libc",
+ "rand",
+ "serde",
+ "serde_json",
+ "tensorflow",
+ "x11",
+ "x11rb",
+ "zstd 0.13.1",
 ]
 
 [[package]]
@@ -505,24 +531,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pj_ai"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "crossbeam-channel",
- "glow",
- "jemallocator",
- "libc",
- "rand",
- "serde",
- "serde_json",
- "tensorflow",
- "x11",
- "x11rb",
- "zstd 0.13.1",
-]
-
-[[package]]
 name = "pkg-config"
 version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -596,6 +604,10 @@ checksum = "567664f262709473930a4bf9e51bf2ebf3348f2e748ccc50dea20646858f8f29"
 dependencies = [
  "bitflags",
 ]
+
+[[package]]
+name = "replay"
+version = "0.1.0"
 
 [[package]]
 name = "rustversion"
