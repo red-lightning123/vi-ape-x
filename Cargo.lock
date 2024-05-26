@@ -508,6 +508,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "packets"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "zstd 0.13.1",
+]
+
+[[package]]
 name = "password-hash"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
