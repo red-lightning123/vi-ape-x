@@ -5,7 +5,6 @@ mod game;
 mod game_interface;
 mod game_thread;
 mod human_interface;
-mod image;
 mod keycodes;
 mod master_thread;
 mod plot_thread;

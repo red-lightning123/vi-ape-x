@@ -1,5 +1,4 @@
 mod compressed_image;
-mod image;
 mod state;
 mod transition;
 

@@ -1,9 +1,7 @@
 [package]
-name = "packets"
+name = "image"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-image = { version = "0.1.0", path = "../image" }
 serde = { version = "1.0.171", features = ["derive"] }
-zstd = "0.13.1"

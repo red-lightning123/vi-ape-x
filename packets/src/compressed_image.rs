@@ -1,4 +1,4 @@
-use crate::image::{ImageOwned, ImageOwned2, ImageRef};
+use image::{ImageOwned, ImageOwned2, ImageRef};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
