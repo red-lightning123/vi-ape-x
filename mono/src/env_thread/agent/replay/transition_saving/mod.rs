@@ -1,7 +1,7 @@
 mod transition_serializer;
 
 use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
-use replay_data::{CompressedImageOwned2, CompressedTransition, SavedTransition};
+use replay_data::{CompressedImageOwned2, CompressedRcTransition, SavedTransition};
 use std::path::Path;
 use std::rc::Rc;
 use transition_serializer::TransitionSerializer;
@@ -9,7 +9,7 @@ use transition_serializer::TransitionSerializer;
 pub fn save_transitions<'a, P, I>(path: P, transitions: I)
 where
     P: AsRef<Path>,
-    I: IntoIterator<Item = &'a CompressedTransition>,
+    I: IntoIterator<Item = &'a CompressedRcTransition>,
 {
     let path = path.as_ref();
     let (serialized_frames, serialized_transitions) = TransitionSerializer::new().run(transitions);
@@ -27,7 +27,7 @@ where
     }
 }
 
-pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<CompressedTransition> {
+pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<CompressedRcTransition> {
     let path = path.as_ref();
     let mut frames_file = open_file_buf_read(path.join("frames")).unwrap();
     let mut frames: Vec<Rc<CompressedImageOwned2>> = vec![];
@@ -49,7 +49,7 @@ pub fn load_transitions<P: AsRef<Path>>(path: P, max_size: usize) -> Vec<Compres
             .next_state
             .frames()
             .map(|frame_index| Rc::clone(&frames[frame_index]));
-        let transition = CompressedTransition {
+        let transition = CompressedRcTransition {
             state: state.into(),
             next_state: next_state.into(),
             action: saved_transition.action,

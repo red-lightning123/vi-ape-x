@@ -4,7 +4,7 @@ use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, Target
 use super::LearningStepInfo;
 use image::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
-use replay_data::{CompressedState, CompressedTransition, State};
+use replay_data::{CompressedRcState, CompressedRcTransition, State};
 use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};
 
@@ -17,7 +17,7 @@ fn frame_to_pixels(frame: &ImageRef2) -> Vec<u8> {
     [plane_0, plane_1].concat()
 }
 
-fn state_to_pixels(state: &CompressedState) -> Vec<u8> {
+fn state_to_pixels(state: &CompressedRcState) -> Vec<u8> {
     let state: State = state.into();
     state
         .frames()
@@ -45,7 +45,7 @@ impl BasicModel {
 }
 
 impl Actor for BasicModel {
-    fn best_action(&self, state: &CompressedState) -> u8 {
+    fn best_action(&self, state: &CompressedRcState) -> u8 {
         let state_values = state_to_pixels(state);
         let state_arg = Tensor::new(&[8, 72, 128])
             .with_values(&state_values)
@@ -60,7 +60,7 @@ impl Actor for BasicModel {
 }
 
 impl BasicLearner for BasicModel {
-    fn train_batch(&mut self, batch: &[&CompressedTransition]) -> LearningStepInfo {
+    fn train_batch(&mut self, batch: &[&CompressedRcTransition]) -> LearningStepInfo {
         let batch_len = batch.len();
         let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
         let mut next_states = Vec::with_capacity(batch_len * 8 * 72 * 128);
@@ -106,7 +106,7 @@ impl BasicLearner for BasicModel {
 impl PrioritizedLearner for BasicModel {
     fn train_batch_prioritized(
         &mut self,
-        batch_transitions: &[&CompressedTransition],
+        batch_transitions: &[&CompressedRcTransition],
         batch_probabilities: &[f64],
         min_probability: f64,
         replay_memory_len: usize,

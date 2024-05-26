@@ -1,6 +1,6 @@
 use super::BasicEpisode;
 use super::{Done, Status};
-use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
+use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
 use std::collections::VecDeque;
 
 pub struct TimeLimitedWrapper {
@@ -23,7 +23,7 @@ impl TimeLimitedWrapper {
         action: u8,
         next_frame: CompressedImageOwned2,
         next_score: u32,
-        transition_queue: &mut VecDeque<(CompressedTransition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(CompressedRcTransition, Option<u32>)>,
     ) -> Status {
         let score_exceeded_record = self.receive_next_score(next_score);
         if score_exceeded_record {
@@ -60,7 +60,7 @@ impl TimeLimitedWrapper {
         const TIMER_THRESHOLD: u32 = 200;
         self.truncation_timer >= TIMER_THRESHOLD
     }
-    pub fn state(&self) -> CompressedState {
+    pub fn state(&self) -> CompressedRcState {
         self.episode.state()
     }
 }

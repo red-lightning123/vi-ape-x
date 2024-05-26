@@ -1,4 +1,4 @@
-use replay_data::{CompressedImageOwned2, CompressedState};
+use replay_data::{CompressedImageOwned2, CompressedRcState};
 use std::collections::VecDeque;
 use std::rc::Rc;
 
@@ -13,7 +13,7 @@ impl FrameStack {
         self.stack.push_back(Rc::new(frame));
     }
 
-    pub fn as_state(&self) -> CompressedState {
+    pub fn as_state(&self) -> CompressedRcState {
         <[Rc<CompressedImageOwned2>; 4]>::try_from(Vec::from(self.stack.clone()))
             .expect("frame stack len should be 4")
             .into()

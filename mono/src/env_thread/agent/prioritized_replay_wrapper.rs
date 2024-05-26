@@ -1,7 +1,7 @@
 use super::replay::ReplayPrioritized;
 use super::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use super::LearningStepInfo;
-use replay_data::{CompressedState, CompressedTransition};
+use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::fs;
 use std::path::Path;
 
@@ -19,13 +19,13 @@ impl<T> PrioritizedReplayWrapper<T> {
             alpha,
         }
     }
-    pub fn remember(&mut self, transition: CompressedTransition) {
+    pub fn remember(&mut self, transition: CompressedRcTransition) {
         self.memory.add_transition(transition);
     }
 }
 
 impl<T: Actor> Actor for PrioritizedReplayWrapper<T> {
-    fn best_action(&self, state: &CompressedState) -> u8 {
+    fn best_action(&self, state: &CompressedRcState) -> u8 {
         self.model.best_action(state)
     }
 }

@@ -1,12 +1,12 @@
 use super::transition_saving::{load_transitions, save_transitions};
 use crate::file_io::{create_file_buf_write, open_file_buf_read};
 use rand::prelude::{IteratorRandom, SliceRandom};
-use replay_data::CompressedTransition;
+use replay_data::CompressedRcTransition;
 use std::collections::VecDeque;
 use std::path::Path;
 
 pub struct ReplayQueue {
-    transitions: VecDeque<CompressedTransition>,
+    transitions: VecDeque<CompressedRcTransition>,
     max_size: usize,
 }
 
@@ -17,13 +17,13 @@ impl ReplayQueue {
             max_size,
         }
     }
-    pub fn add_transition(&mut self, transition: CompressedTransition) {
+    pub fn add_transition(&mut self, transition: CompressedRcTransition) {
         if self.transitions.len() >= self.max_size {
             self.transitions.pop_front();
         }
         self.transitions.push_back(transition);
     }
-    pub fn sample_batch(&self, batch_size: usize) -> Vec<&CompressedTransition> {
+    pub fn sample_batch(&self, batch_size: usize) -> Vec<&CompressedRcTransition> {
         let mut batch = self
             .transitions
             .iter()

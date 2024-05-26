@@ -1,5 +1,5 @@
 use replay_data::{
-    CompressedImageOwned2, CompressedState, CompressedTransition, SavedState, SavedTransition,
+    CompressedImageOwned2, CompressedRcState, CompressedRcTransition, SavedState, SavedTransition,
 };
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -24,7 +24,7 @@ impl<'a> TransitionSerializer<'a> {
         transitions: I,
     ) -> (Vec<&'a Rc<CompressedImageOwned2>>, Vec<SavedTransition>)
     where
-        I: IntoIterator<Item = &'a CompressedTransition>,
+        I: IntoIterator<Item = &'a CompressedRcTransition>,
     {
         for transition in transitions {
             self.receive_transition(transition);
@@ -32,7 +32,7 @@ impl<'a> TransitionSerializer<'a> {
         (self.frames, self.transitions)
     }
 
-    fn receive_transition(&mut self, transition: &'a CompressedTransition) {
+    fn receive_transition(&mut self, transition: &'a CompressedRcTransition) {
         let transition = SavedTransition {
             state: self.receive_state(&transition.state),
             next_state: self.receive_state(&transition.next_state),
@@ -43,7 +43,7 @@ impl<'a> TransitionSerializer<'a> {
         self.transitions.push(transition);
     }
 
-    fn receive_state(&mut self, state: &'a CompressedState) -> SavedState {
+    fn receive_state(&mut self, state: &'a CompressedRcState) -> SavedState {
         let state_frame_indices = state
             .frames()
             .each_ref()

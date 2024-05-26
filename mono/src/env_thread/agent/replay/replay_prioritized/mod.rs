@@ -2,7 +2,7 @@ mod priority_circ_buffer;
 
 use super::transition_saving;
 use priority_circ_buffer::{PriorityCircBuffer, Zero};
-use replay_data::CompressedTransition;
+use replay_data::CompressedRcTransition;
 use std::path::Path;
 
 impl Zero for f64 {
@@ -14,11 +14,11 @@ impl Zero for f64 {
 const EPSILON: f64 = 0.001;
 
 pub struct ReplayPrioritized {
-    transitions: PriorityCircBuffer<f64, CompressedTransition>,
+    transitions: PriorityCircBuffer<f64, CompressedRcTransition>,
 }
 
 impl ReplayPrioritized {
-    fn add_transition_with_priority(&mut self, transition: CompressedTransition, priority: f64) {
+    fn add_transition_with_priority(&mut self, transition: CompressedRcTransition, priority: f64) {
         self.transitions.push(priority, transition);
     }
     fn initial_priority(&self) -> f64 {
@@ -53,13 +53,13 @@ impl ReplayPrioritized {
             self.transitions.update_priority(*index, priority);
         }
     }
-    pub fn add_transition(&mut self, transition: CompressedTransition) {
+    pub fn add_transition(&mut self, transition: CompressedRcTransition) {
         self.add_transition_with_priority(transition, self.initial_priority());
     }
     pub fn sample_batch(
         &self,
         batch_size: usize,
-    ) -> (Vec<usize>, Vec<f64>, Vec<&CompressedTransition>) {
+    ) -> (Vec<usize>, Vec<f64>, Vec<&CompressedRcTransition>) {
         let mut batch_indices = vec![];
         let mut batch_probabilities = vec![];
         let mut batch_transitions = vec![];

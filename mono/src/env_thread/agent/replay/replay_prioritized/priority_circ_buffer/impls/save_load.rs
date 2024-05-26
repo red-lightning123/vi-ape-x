@@ -1,10 +1,10 @@
 use super::transition_saving::{load_transitions, save_transitions};
 use super::PriorityCircBuffer;
 use crate::file_io::{create_file_buf_write, open_file_buf_read};
-use replay_data::CompressedTransition;
+use replay_data::CompressedRcTransition;
 use std::path::Path;
 
-impl PriorityCircBuffer<f64, CompressedTransition> {
+impl PriorityCircBuffer<f64, CompressedRcTransition> {
     pub fn save<P: AsRef<Path>>(&self, path: P) {
         let path = path.as_ref();
         let max_size_file = create_file_buf_write(path.join("max_size")).unwrap();

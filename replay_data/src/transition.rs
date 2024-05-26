@@ -1,4 +1,4 @@
-use crate::state::{CompressedState, SavedState, State};
+use crate::state::{CompressedRcState, CompressedState, SavedState, State};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -12,4 +12,5 @@ pub struct GenericTransition<S> {
 
 pub type Transition = GenericTransition<State>;
 pub type CompressedTransition = GenericTransition<CompressedState>;
+pub type CompressedRcTransition = GenericTransition<CompressedRcState>;
 pub type SavedTransition = GenericTransition<SavedState>;

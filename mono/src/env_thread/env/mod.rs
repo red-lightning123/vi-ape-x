@@ -7,13 +7,13 @@ use crossbeam_channel::{Receiver, Sender};
 use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
-use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
+use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
 use std::collections::VecDeque;
 
 pub struct Env {
     bridge: MessageBridge,
     episode: TimeLimitedWrapper,
-    pending_transitions: VecDeque<(CompressedTransition, Option<u32>)>,
+    pending_transitions: VecDeque<(CompressedRcTransition, Option<u32>)>,
     waiting_hold: bool,
 }
 
@@ -73,10 +73,10 @@ impl Env {
         }
         Ok(((&frame).into(), score))
     }
-    pub fn state(&self) -> CompressedState {
+    pub fn state(&self) -> CompressedRcState {
         self.episode.state()
     }
-    pub fn pop_transition(&mut self) -> Option<(CompressedTransition, Option<u32>)> {
+    pub fn pop_transition(&mut self) -> Option<(CompressedRcTransition, Option<u32>)> {
         self.pending_transitions.pop_front()
     }
     pub const fn n_actions() -> u8 {

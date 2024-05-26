@@ -1,7 +1,7 @@
 use super::replay::ReplayQueue;
 use super::traits::{Actor, BasicLearner, Persistable, TargetNet};
 use super::LearningStepInfo;
-use replay_data::{CompressedState, CompressedTransition};
+use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::fs;
 use std::path::Path;
 
@@ -17,13 +17,13 @@ impl<T> QueueReplayWrapper<T> {
             memory: ReplayQueue::with_max_size(memory_capacity),
         }
     }
-    pub fn remember(&mut self, transition: CompressedTransition) {
+    pub fn remember(&mut self, transition: CompressedRcTransition) {
         self.memory.add_transition(transition);
     }
 }
 
 impl<T: Actor> Actor for QueueReplayWrapper<T> {
-    fn best_action(&self, state: &CompressedState) -> u8 {
+    fn best_action(&self, state: &CompressedRcState) -> u8 {
         self.model.best_action(state)
     }
 }

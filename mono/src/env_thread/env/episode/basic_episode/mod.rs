@@ -3,7 +3,7 @@ mod step_memory;
 
 use super::{Done, Status};
 use frame_stack::FrameStack;
-use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
+use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
 use std::collections::VecDeque;
 use step_memory::StepMemory;
 
@@ -28,7 +28,7 @@ impl BasicEpisode {
         action: u8,
         next_frame: CompressedImageOwned2,
         next_score: u32,
-        transition_queue: &mut VecDeque<(CompressedTransition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(CompressedRcTransition, Option<u32>)>,
     ) -> Status {
         let state = self.state.as_state();
         let score = self.score;
@@ -71,7 +71,7 @@ impl BasicEpisode {
         const TERMINATION_SCORE_THRESHOLD: u32 = 10;
         score >= next_score + TERMINATION_SCORE_THRESHOLD
     }
-    pub fn state(&self) -> CompressedState {
+    pub fn state(&self) -> CompressedRcState {
         self.state.as_state()
     }
     pub fn score(&self) -> u32 {
