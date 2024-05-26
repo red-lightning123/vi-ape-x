@@ -1,7 +1,7 @@
 use super::transition_saving::{load_transitions, save_transitions};
-use crate::env_thread::agent::CompressedTransition;
 use crate::file_io::{create_file_buf_write, open_file_buf_read};
 use rand::prelude::{IteratorRandom, SliceRandom};
+use replay_data::CompressedTransition;
 use std::collections::VecDeque;
 use std::path::Path;
 

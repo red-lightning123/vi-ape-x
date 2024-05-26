@@ -1,7 +1,6 @@
 use super::BasicEpisode;
-use super::{CompressedState, CompressedTransition};
 use super::{Done, Status};
-use crate::env_thread::CompressedImageOwned2;
+use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
 use std::collections::VecDeque;
 
 pub struct TimeLimitedWrapper {

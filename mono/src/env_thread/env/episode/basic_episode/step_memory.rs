@@ -1,4 +1,4 @@
-use super::{CompressedState, CompressedTransition};
+use replay_data::{CompressedState, CompressedTransition};
 use std::collections::VecDeque;
 
 pub struct StepMemory {

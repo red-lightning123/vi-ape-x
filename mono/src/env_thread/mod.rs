@@ -14,9 +14,7 @@ use env::{Env, StepError};
 use image::ImageOwned2;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
-use replay_data::CompressedImageOwned2;
-use replay_data::{CompressedState, SavedState, State};
-use replay_data::{CompressedTransition, SavedTransition, Transition};
+use replay_data::State;
 use training_schedule::TrainingSchedule;
 
 fn random_action() -> u8 {

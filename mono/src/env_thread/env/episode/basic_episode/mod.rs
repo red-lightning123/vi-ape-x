@@ -1,10 +1,9 @@
 mod frame_stack;
 mod step_memory;
 
-use super::{CompressedState, CompressedTransition};
 use super::{Done, Status};
-use crate::env_thread::CompressedImageOwned2;
 use frame_stack::FrameStack;
+use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
 use std::collections::VecDeque;
 use step_memory::StepMemory;
 

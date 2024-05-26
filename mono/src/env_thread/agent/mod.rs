@@ -4,7 +4,6 @@ mod queue_replay_wrapper;
 pub mod replay;
 pub mod traits;
 
-use super::{CompressedState, CompressedTransition, State};
 pub use basic_model::BasicModel;
 pub use prioritized_replay_wrapper::PrioritizedReplayWrapper;
 pub use queue_replay_wrapper::QueueReplayWrapper;

@@ -2,7 +2,6 @@ mod impls;
 mod priority_tree;
 
 use super::transition_saving;
-use super::CompressedTransition;
 pub use priority_tree::{Infinity, NegativeInfinity, Zero};
 use priority_tree::{Priority, PriorityTree};
 

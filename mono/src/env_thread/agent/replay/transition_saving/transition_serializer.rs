@@ -1,4 +1,4 @@
-use crate::env_thread::{
+use replay_data::{
     CompressedImageOwned2, CompressedState, CompressedTransition, SavedState, SavedTransition,
 };
 use std::collections::HashMap;

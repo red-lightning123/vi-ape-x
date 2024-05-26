@@ -1,6 +1,7 @@
 use super::transition_saving::{load_transitions, save_transitions};
-use super::{CompressedTransition, PriorityCircBuffer};
+use super::PriorityCircBuffer;
 use crate::file_io::{create_file_buf_write, open_file_buf_read};
+use replay_data::CompressedTransition;
 use std::path::Path;
 
 impl PriorityCircBuffer<f64, CompressedTransition> {

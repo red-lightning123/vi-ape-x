@@ -1,13 +1,13 @@
 mod episode;
 mod message_bridge;
 
-use super::{CompressedState, CompressedTransition, EnvThreadMessage};
-use crate::env_thread::CompressedImageOwned2;
+use super::EnvThreadMessage;
 use crate::GameThreadMessage;
 use crossbeam_channel::{Receiver, Sender};
 use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
+use replay_data::{CompressedImageOwned2, CompressedState, CompressedTransition};
 use std::collections::VecDeque;
 
 pub struct Env {

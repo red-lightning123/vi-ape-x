@@ -1,8 +1,8 @@
 mod priority_circ_buffer;
 
 use super::transition_saving;
-use crate::env_thread::CompressedTransition;
 use priority_circ_buffer::{PriorityCircBuffer, Zero};
+use replay_data::CompressedTransition;
 use std::path::Path;
 
 impl Zero for f64 {

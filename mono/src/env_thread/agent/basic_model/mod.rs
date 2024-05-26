@@ -1,9 +1,10 @@
 mod model_fns;
 
 use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
-use super::{CompressedState, CompressedTransition, LearningStepInfo, State};
+use super::LearningStepInfo;
 use image::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
+use replay_data::{CompressedState, CompressedTransition, State};
 use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};
 

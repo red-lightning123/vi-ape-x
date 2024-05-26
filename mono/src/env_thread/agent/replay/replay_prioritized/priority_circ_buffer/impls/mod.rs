@@ -2,7 +2,7 @@ mod sampling;
 mod save_load;
 
 use super::transition_saving;
-use super::{CompressedTransition, PriorityCircBuffer};
+use super::PriorityCircBuffer;
 use super::{Priority, PriorityTree};
 
 impl<P: Priority, V> PriorityCircBuffer<P, V> {

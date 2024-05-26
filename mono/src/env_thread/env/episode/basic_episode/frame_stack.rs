@@ -1,5 +1,4 @@
-use super::CompressedState;
-use crate::env_thread::CompressedImageOwned2;
+use replay_data::{CompressedImageOwned2, CompressedState};
 use std::collections::VecDeque;
 use std::rc::Rc;
 

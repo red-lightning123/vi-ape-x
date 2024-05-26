@@ -1,4 +1,5 @@
-use super::{CompressedState, CompressedTransition, LearningStepInfo};
+use super::LearningStepInfo;
+use replay_data::{CompressedState, CompressedTransition};
 use std::path::Path;
 
 pub trait Actor {
