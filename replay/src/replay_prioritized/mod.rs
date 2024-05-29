@@ -1,9 +1,7 @@
 mod priority_circ_buffer;
 
-use super::transition_saving;
 use priority_circ_buffer::{PriorityCircBuffer, Zero};
-use replay_data::CompressedRcTransition;
-use std::path::Path;
+use replay_data::CompressedTransition;
 
 impl Zero for f64 {
     fn zero() -> Self {
@@ -11,55 +9,32 @@ impl Zero for f64 {
     }
 }
 
-const EPSILON: f64 = 0.001;
-
 pub struct ReplayPrioritized {
-    transitions: PriorityCircBuffer<f64, CompressedRcTransition>,
+    transitions: PriorityCircBuffer<f64, CompressedTransition>,
 }
 
 impl ReplayPrioritized {
-    fn add_transition_with_priority(&mut self, transition: CompressedRcTransition, priority: f64) {
+    pub fn add_transition_with_priority(
+        &mut self,
+        transition: CompressedTransition,
+        priority: f64,
+    ) {
         self.transitions.push(priority, transition);
-    }
-    fn initial_priority(&self) -> f64 {
-        // technically, here OpenAI baselines use the maximum priority over all
-        // transitions ever encountered as the placeholder priority, while this
-        // uses the maximum over transitions currently present in memory
-        let max_priority = self.transitions.max_priority();
-        match max_priority {
-            Some(max_priority) => {
-                if max_priority < EPSILON {
-                    EPSILON
-                } else {
-                    max_priority
-                }
-            }
-            None => EPSILON,
-        }
     }
     pub fn with_max_size(max_size: usize) -> Self {
         Self {
             transitions: PriorityCircBuffer::with_max_size(max_size),
         }
     }
-    pub fn update_priorities_with_td_errors(
-        &mut self,
-        indices: &[usize],
-        abs_td_errors: &[f64],
-        alpha: f64,
-    ) {
-        for (index, abs_td_error) in indices.iter().zip(abs_td_errors.iter()) {
-            let priority = (abs_td_error + EPSILON).powf(alpha);
-            self.transitions.update_priority(*index, priority);
+    pub fn update_priorities(&mut self, indices: &[usize], priorities: &[f64]) {
+        for (index, priority) in indices.iter().zip(priorities.iter()) {
+            self.transitions.update_priority(*index, *priority);
         }
-    }
-    pub fn add_transition(&mut self, transition: CompressedRcTransition) {
-        self.add_transition_with_priority(transition, self.initial_priority());
     }
     pub fn sample_batch(
         &self,
         batch_size: usize,
-    ) -> (Vec<usize>, Vec<f64>, Vec<&CompressedRcTransition>) {
+    ) -> (Vec<usize>, Vec<f64>, Vec<&CompressedTransition>) {
         let mut batch_indices = vec![];
         let mut batch_probabilities = vec![];
         let mut batch_transitions = vec![];
@@ -78,16 +53,11 @@ impl ReplayPrioritized {
         (batch_indices, batch_probabilities, batch_transitions)
     }
     pub fn min_probability(&self) -> f64 {
+        const EPSILON: f64 = 0.001;
         let min_priority = self.transitions.min_priority().unwrap_or(EPSILON);
         min_priority / self.transitions.total_priority()
     }
     pub fn len(&self) -> usize {
         self.transitions.len()
-    }
-    pub fn save<P: AsRef<Path>>(&self, path: P) {
-        self.transitions.save(path);
-    }
-    pub fn load<P: AsRef<Path>>(&mut self, path: P) {
-        self.transitions.load(path);
     }
 }
