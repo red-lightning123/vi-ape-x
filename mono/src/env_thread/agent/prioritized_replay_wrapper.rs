@@ -1,6 +1,6 @@
 use super::replay::ReplayPrioritized;
-use super::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
-use super::LearningStepInfo;
+use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
+use model::LearningStepInfo;
 use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::fs;
 use std::path::Path;

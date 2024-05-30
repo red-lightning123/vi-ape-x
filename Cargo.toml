@@ -5,6 +5,7 @@ members = [
   "actor",
   "image",
   "learner",
+  "model",
   "mono",
   "packets",
   "replay",

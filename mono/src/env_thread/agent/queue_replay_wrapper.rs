@@ -1,6 +1,6 @@
 use super::replay::ReplayQueue;
-use super::traits::{Actor, BasicLearner, Persistable, TargetNet};
-use super::LearningStepInfo;
+use model::traits::{Actor, BasicLearner, Persistable, TargetNet};
+use model::LearningStepInfo;
 use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::fs;
 use std::path::Path;

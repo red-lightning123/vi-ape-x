@@ -447,6 +447,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "model"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "replay_data",
+ "tensorflow",
+]
+
+[[package]]
 name = "mono"
 version = "0.1.0"
 dependencies = [
@@ -456,11 +465,11 @@ dependencies = [
  "image",
  "jemallocator",
  "libc",
+ "model",
  "rand",
  "replay_data",
  "serde",
  "serde_json",
- "tensorflow",
  "x11",
  "x11rb",
 ]

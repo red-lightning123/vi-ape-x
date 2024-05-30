@@ -7,11 +7,12 @@ use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
-use agent::traits::{Actor, Persistable, TargetNet};
-use agent::{BasicModel, PrioritizedReplayWrapper};
+use agent::PrioritizedReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
+use model::traits::{Actor, Persistable, TargetNet};
+use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
