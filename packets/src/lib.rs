@@ -1,9 +1,15 @@
+use model::Params;
 use replay_data::CompressedTransition;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub enum LearnerRequest {
     GetParams,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetParamsReply {
+    pub params: Params,
 }
 
 #[derive(Serialize, Deserialize)]

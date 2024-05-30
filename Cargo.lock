@@ -453,6 +453,7 @@ version = "0.1.0"
 dependencies = [
  "image",
  "replay_data",
+ "serde",
  "tensorflow",
 ]
 
@@ -533,6 +534,7 @@ dependencies = [
 name = "packets"
 version = "0.1.0"
 dependencies = [
+ "model",
  "replay_data",
  "serde",
 ]

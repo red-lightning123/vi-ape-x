@@ -123,6 +123,34 @@ class Model(tf.Module):
             variable.assign(tf.io.parse_tensor(tf.io.read_file(tf.strings.join([path, "/model/", variable.name])), out_type=variable.dtype))
         for variable in self.optimizer.variables:
             variable.assign(tf.io.parse_tensor(tf.io.read_file(tf.strings.join([path, "/optimizer/", variable.name])), out_type=variable.dtype))
+    # Get_params encodes each param_layer with base64, and set_params decodes
+    # its param_layers accordingly. This is due to a current limitation in the
+    # rust lib for tensorflow: Params are serialized as strings, but the only
+    # way to pass strings from tf.functions to tensorflow-rust is via rust's
+    # String type. Rust Strings are UTF-8 encoded, so there is a lack of support
+    # for passing non-UTF-8 strings. Meanwhile, tf.io.serialize_tensor doesn't
+    # necessarily return valid UTF-8 encoded data, so the serialized tensors
+    # can't be passed to rust. Encoding the serialized tensors with base64
+    # before passing them to rust is a workaround that avoids this problem, as
+    # base64 encoded strings are guaranteed to be valid UTF-8. The disadvantage
+    # is that encoding and decoding adds unnecessary overhead to these functions
+    @tf.function
+    def get_params(self):
+        params = []
+        for variable in self.model.variables:
+            param_layer = tf.io.serialize_tensor(variable)
+            param_layer = tf.io.encode_base64(param_layer)
+            params.append(param_layer)
+        return tf.convert_to_tensor(params)
+    @tf.function
+    def set_params(self, params):
+        i = 0
+        for variable in self.model.variables:
+            param_layer = params[i]
+            param_layer = tf.io.decode_base64(param_layer)
+            param_layer = tf.io.parse_tensor(param_layer, out_type=variable.dtype)
+            variable.assign(param_layer)
+            i += 1
 
 class Agent(tf.Module):
     def __init__(self):
@@ -192,6 +220,13 @@ class Agent(tf.Module):
         self.control_model.load(tf.strings.join([path, "/control"]))
         self.target_model.load(tf.strings.join([path, "/target"]))
         return 0 # tf function having a signature must return something
+    @tf.function
+    def get_params(self):
+        return self.control_model.get_params()
+    @tf.function
+    def set_params(self, params):
+        self.control_model.set_params(params)
+        return 0 # tf function having a signature must return something
         
 agent = Agent()
 
@@ -213,6 +248,9 @@ train_pred_step_prioritized = agent.train_pred_step_prioritized.get_concrete_fun
 copy_control_to_target = agent.copy_control_to_target.get_concrete_function()
 save = agent.save.get_concrete_function(path)
 load = agent.load.get_concrete_function(path)
+params  = agent.get_params()
+get_params = agent.get_params.get_concrete_function()
+set_params = agent.set_params.get_concrete_function(params)
 
 signatures = {
     "best_action": best_action,
@@ -220,7 +258,9 @@ signatures = {
     "train_pred_step_prioritized": train_pred_step_prioritized,
     "copy_control_to_target": copy_control_to_target,
     "save": save,
-    "load": load
+    "load": load,
+    "get_params": get_params,
+    "set_params": set_params,
 }
 
 tf.saved_model.save(agent, export_dir="model", signatures=signatures)

@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 image = { version = "0.1.0", path = "../image" }
 replay_data = { version = "0.1.0", path = "../replay_data" }
+serde = { version = "1.0.171", features = ["derive"] }
 tensorflow = { version = "0.20.0", features = ["tensorflow_gpu"] }

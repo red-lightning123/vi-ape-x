@@ -1,7 +1,10 @@
 mod model_fns;
 
-use super::traits::{Actor, BasicLearner, Persistable, PrioritizedLearner, TargetNet};
+use super::traits::{
+    Actor, BasicLearner, ParamFetcher, Persistable, PrioritizedLearner, TargetNet,
+};
 use super::LearningStepInfo;
+use crate::Params;
 use image::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
 use replay_data::{CompressedRcState, CompressedRcTransition, State};
@@ -205,5 +208,22 @@ impl Persistable for BasicModel {
     }
     fn load<P: AsRef<Path>>(&mut self, path: P) {
         self.load_internal(path.as_ref().to_str().unwrap().to_string());
+    }
+}
+
+impl ParamFetcher for BasicModel {
+    fn params(&self) -> Params {
+        let (params,): (Tensor<String>,) = self.fns.params.call(&self.model_bundle.session, ());
+        Params(params.to_vec())
+    }
+    fn set_params(&mut self, params: Params) {
+        let params = params.0;
+        let params = Tensor::new(&[params.len() as u64])
+            .with_values(&params)
+            .unwrap();
+        let (_,): (Tensor<i32>,) = self
+            .fns
+            .set_params
+            .call(&self.model_bundle.session, (params,));
     }
 }

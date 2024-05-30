@@ -10,6 +10,8 @@ pub struct ModelFns {
     pub copy_control_to_target: TensorflowFn<0, 1>,
     pub save: TensorflowFn<1, 1>,
     pub load: TensorflowFn<1, 1>,
+    pub params: TensorflowFn<0, 1>,
+    pub set_params: TensorflowFn<1, 1>,
 }
 
 impl ModelFns {
@@ -55,6 +57,14 @@ impl ModelFns {
             ),
             save: TensorflowFn::new(model_bundle, graph, "save", ["path"], [("output_0", 0)]),
             load: TensorflowFn::new(model_bundle, graph, "load", ["path"], [("output_0", 0)]),
+            params: TensorflowFn::new(model_bundle, graph, "get_params", [], [("output_0", 0)]),
+            set_params: TensorflowFn::new(
+                model_bundle,
+                graph,
+                "set_params",
+                ["params"],
+                [("output_0", 0)],
+            ),
         }
     }
 }

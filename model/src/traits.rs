@@ -1,4 +1,4 @@
-use super::LearningStepInfo;
+use super::{LearningStepInfo, Params};
 use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::path::Path;
 
@@ -28,4 +28,9 @@ pub trait TargetNet {
 pub trait Persistable {
     fn save<P: AsRef<Path>>(&self, filepath: P);
     fn load<P: AsRef<Path>>(&mut self, filepath: P);
+}
+
+pub trait ParamFetcher {
+    fn params(&self) -> Params;
+    fn set_params(&mut self, params: Params);
 }
