@@ -5,6 +5,21 @@ version = 3
 [[package]]
 name = "actor"
 version = "0.1.0"
+dependencies = [
+ "bincode",
+ "crossbeam-channel",
+ "glow",
+ "image",
+ "jemallocator",
+ "libc",
+ "model",
+ "rand",
+ "replay_data",
+ "serde",
+ "serde_json",
+ "x11",
+ "x11rb",
+]
 
 [[package]]
 name = "adler"
