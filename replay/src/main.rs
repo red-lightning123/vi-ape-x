@@ -14,7 +14,6 @@ fn main() {
         let (stream, _source_addr) = socket.accept().unwrap();
         let request = bincode::deserialize_from(&stream).unwrap();
         match request {
-            ReplayRequest::ReleaseLock => todo!(),
             ReplayRequest::SampleBatch { batch_len } => {
                 if replay.len() < batch_len {
                     let err = SampleBatchErrorKind::NotEnoughTransitions;
