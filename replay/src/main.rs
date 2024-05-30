@@ -1,7 +1,9 @@
 mod replay_prioritized;
+mod serializer_hack;
 
-use packets::ReplayRequest;
+use packets::{ReplayRequest, SampleBatchErrorKind, SampleBatchResult};
 use replay_prioritized::ReplayPrioritized;
+use serializer_hack::{SampleBatchReplySerializer, SampleBatchResultSerializer};
 use std::net::TcpListener;
 
 fn main() {
@@ -15,12 +17,19 @@ fn main() {
             ReplayRequest::ReleaseLock => todo!(),
             ReplayRequest::SampleBatch { batch_len } => {
                 if replay.len() < batch_len {
-                    todo!(
-                        "reply to indicate that there aren't enough transitions for the batch_len"
-                    );
+                    let err = SampleBatchErrorKind::NotEnoughTransitions;
+                    let result: SampleBatchResult = Err(err);
+                    bincode::serialize_into(stream, &result).unwrap();
                 } else {
-                    let _batch = replay.sample_batch(batch_len);
-                    todo!("reply with the batch");
+                    let batch = replay.sample_batch(batch_len);
+                    let reply = SampleBatchReplySerializer {
+                        batch,
+                        min_probability: replay.min_probability(),
+                        replay_len: replay.len(),
+                    };
+                    let result: SampleBatchResultSerializer = Ok(reply);
+                    bincode::serialize_into(stream, &result).unwrap();
+                    todo!("wait for update of batch priorities");
                 }
             }
             ReplayRequest::InsertBatch { batch } => {

@@ -25,3 +25,17 @@ pub enum ReplayRequest {
     InsertBatch { batch: Vec<Insertion> },
     UpdateBatchPriorities { batch: Vec<PriorityUpdate> },
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct SampleBatchReply {
+    pub batch: (Vec<usize>, Vec<f64>, Vec<CompressedTransition>),
+    pub min_probability: f64,
+    pub replay_len: usize,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum SampleBatchErrorKind {
+    NotEnoughTransitions,
+}
+
+pub type SampleBatchResult = Result<SampleBatchReply, SampleBatchErrorKind>;
