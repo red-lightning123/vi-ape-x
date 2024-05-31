@@ -1,10 +1,12 @@
 mod episode;
+mod frame_stack;
 mod message_bridge;
 
 use super::EnvThreadMessage;
 use crate::GameThreadMessage;
 use crossbeam_channel::{Receiver, Sender};
 use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
+use frame_stack::FrameStack;
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
 use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
@@ -12,7 +14,7 @@ use std::collections::VecDeque;
 
 pub struct Env {
     bridge: MessageBridge,
-    episode: TimeLimitedWrapper,
+    episode: TimeLimitedWrapper<FrameStack>,
     pending_transitions: VecDeque<(CompressedRcTransition, Option<u32>)>,
     waiting_hold: bool,
 }

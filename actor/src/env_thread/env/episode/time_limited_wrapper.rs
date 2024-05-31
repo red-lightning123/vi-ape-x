@@ -1,16 +1,23 @@
 use super::BasicEpisode;
-use super::{Done, Status};
-use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
+use super::{Done, StateAccum, Status};
+use replay_data::GenericTransition;
 use std::collections::VecDeque;
 
-pub struct TimeLimitedWrapper {
-    episode: BasicEpisode,
+pub struct TimeLimitedWrapper<State>
+where
+    State: StateAccum,
+{
+    episode: BasicEpisode<State>,
     truncation_timer: u32,
     current_score_record: u32,
 }
 
-impl TimeLimitedWrapper {
-    pub fn new(episode: BasicEpisode) -> Self {
+impl<State> TimeLimitedWrapper<State>
+where
+    State: StateAccum,
+    <State as StateAccum>::View: Clone,
+{
+    pub fn new(episode: BasicEpisode<State>) -> Self {
         let current_score_record = episode.score();
         Self {
             episode,
@@ -21,9 +28,9 @@ impl TimeLimitedWrapper {
     pub fn step(
         &mut self,
         action: u8,
-        next_frame: CompressedImageOwned2,
+        next_frame: <State as StateAccum>::Frame,
         next_score: u32,
-        transition_queue: &mut VecDeque<(CompressedRcTransition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(GenericTransition<State::View>, Option<u32>)>,
     ) -> Status {
         let score_exceeded_record = self.receive_next_score(next_score);
         if score_exceeded_record {
@@ -60,7 +67,7 @@ impl TimeLimitedWrapper {
         const TIMER_THRESHOLD: u32 = 200;
         self.truncation_timer >= TIMER_THRESHOLD
     }
-    pub fn state(&self) -> CompressedRcState {
+    pub fn state(&self) -> State::View {
         self.episode.state()
     }
 }

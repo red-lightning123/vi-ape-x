@@ -1,36 +1,41 @@
-mod frame_stack;
 mod step_memory;
 
-use super::{Done, Status};
-use frame_stack::FrameStack;
-use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
+use super::{Done, StateAccum, Status};
+use replay_data::GenericTransition;
 use std::collections::VecDeque;
 use step_memory::StepMemory;
 
-pub struct BasicEpisode {
-    step_memory: StepMemory,
-    state: FrameStack,
+pub struct BasicEpisode<State>
+where
+    State: StateAccum,
+{
+    step_memory: StepMemory<<State as StateAccum>::View>,
+    state: State,
     score: u32,
 }
 
-impl BasicEpisode {
-    pub fn new(frame: CompressedImageOwned2, score: u32) -> Self {
+impl<State> BasicEpisode<State>
+where
+    State: StateAccum,
+    <State as StateAccum>::View: Clone,
+{
+    pub fn new(frame: State::Frame, score: u32) -> Self {
         const N_STEPS: usize = 3;
         const GAMMA: f64 = 0.99;
         Self {
             step_memory: StepMemory::new(N_STEPS, GAMMA),
-            state: FrameStack::from(frame),
+            state: State::from(frame),
             score,
         }
     }
     pub fn step(
         &mut self,
         action: u8,
-        next_frame: CompressedImageOwned2,
+        next_frame: State::Frame,
         next_score: u32,
-        transition_queue: &mut VecDeque<(CompressedRcTransition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(GenericTransition<State::View>, Option<u32>)>,
     ) -> Status {
-        let state = self.state.as_state();
+        let state = self.state.view();
         let score = self.score;
         let terminated = Self::terminated(score, next_score);
         let reward = if terminated {
@@ -41,7 +46,7 @@ impl BasicEpisode {
             // calculated as f64::from(next_score - score)
             f64::from(next_score) - f64::from(score)
         };
-        self.state.push(next_frame);
+        self.state.receive(next_frame);
         self.score = next_score;
         if let Some(transition) = self.step_memory.push(state, score, action, reward) {
             transition_queue.push_back(transition);
@@ -71,8 +76,8 @@ impl BasicEpisode {
         const TERMINATION_SCORE_THRESHOLD: u32 = 10;
         score >= next_score + TERMINATION_SCORE_THRESHOLD
     }
-    pub fn state(&self) -> CompressedRcState {
-        self.state.as_state()
+    pub fn state(&self) -> State::View {
+        self.state.view()
     }
     pub fn score(&self) -> u32 {
         self.score

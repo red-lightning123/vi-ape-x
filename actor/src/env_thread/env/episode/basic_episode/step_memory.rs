@@ -1,13 +1,16 @@
-use replay_data::{CompressedRcState, CompressedRcTransition};
+use replay_data::GenericTransition;
 use std::collections::VecDeque;
 
-pub struct StepMemory {
-    step_queue: VecDeque<Step>,
+pub struct StepMemory<State> {
+    step_queue: VecDeque<Step<State>>,
     n: usize,
     gamma: f64,
 }
 
-impl StepMemory {
+impl<State> StepMemory<State>
+where
+    State: Clone,
+{
     pub fn new(n: usize, gamma: f64) -> Self {
         Self {
             step_queue: VecDeque::new(),
@@ -20,14 +23,14 @@ impl StepMemory {
     }
     pub fn push(
         &mut self,
-        state: CompressedRcState,
+        state: State,
         score: u32,
         action: u8,
         reward: f64,
-    ) -> Option<(CompressedRcTransition, Option<u32>)> {
+    ) -> Option<(GenericTransition<State>, Option<u32>)> {
         let transition = if self.step_queue.len() >= self.n {
             let (step, total_reward) = self.pop_front_step().unwrap();
-            let transition = CompressedRcTransition {
+            let transition = GenericTransition {
                 state: step.state,
                 next_state: state.clone(),
                 action: step.action,
@@ -48,11 +51,11 @@ impl StepMemory {
     }
     pub fn pop_terminated_transitions_into(
         &mut self,
-        transition_queue: &mut VecDeque<(CompressedRcTransition, Option<u32>)>,
+        transition_queue: &mut VecDeque<(GenericTransition<State>, Option<u32>)>,
     ) {
         while let Some((step, total_reward)) = self.pop_front_step() {
             let next_state = step.state.clone();
-            let transition = CompressedRcTransition {
+            let transition = GenericTransition {
                 state: step.state,
                 next_state,
                 action: step.action,
@@ -64,10 +67,10 @@ impl StepMemory {
             transition_queue.push_back((transition, episode_score));
         }
     }
-    fn push_back_step(&mut self, step: Step) {
+    fn push_back_step(&mut self, step: Step<State>) {
         self.step_queue.push_back(step);
     }
-    fn pop_front_step(&mut self) -> Option<(Step, f64)> {
+    fn pop_front_step(&mut self) -> Option<(Step<State>, f64)> {
         let total_reward = self.discounted_reward_sum();
         self.step_queue.pop_front().map(|step| (step, total_reward))
     }
@@ -83,8 +86,8 @@ impl StepMemory {
     }
 }
 
-struct Step {
-    state: CompressedRcState,
+struct Step<State> {
+    state: State,
     score: u32,
     action: u8,
     reward: f64,
