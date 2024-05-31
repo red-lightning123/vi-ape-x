@@ -1,6 +1,3 @@
-mod replay_prioritized;
-mod replay_queue;
-mod transition_saving;
+mod replay_remote;
 
-pub use replay_prioritized::ReplayPrioritized;
-pub use replay_queue::ReplayQueue;
+pub use replay_remote::ReplayRemote;

@@ -13,6 +13,7 @@ dependencies = [
  "jemallocator",
  "libc",
  "model",
+ "packets",
  "rand",
  "replay_data",
  "serde",

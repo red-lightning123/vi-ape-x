@@ -7,7 +7,7 @@ use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
-use agent::PrioritizedReplayWrapper;
+use agent::RemoteReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
@@ -27,7 +27,7 @@ const THREAD_NAME: &str = "env";
 
 fn step(
     env: &mut Env,
-    agent: &mut PrioritizedReplayWrapper<BasicModel>,
+    agent: &mut RemoteReplayWrapper<BasicModel>,
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
@@ -134,7 +134,6 @@ pub fn spawn_env_thread(
         const N_EPS_RANDOM_STEPS: u32 = 100_000;
         const N_EPS_GREEDY_STEPS: u32 = 1_000_000;
         const TARGET_UPDATE_INTERVAL_STEPS: u32 = 10_000;
-        const MEMORY_CAPACITY: usize = 1_000_000;
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let mut schedule = TrainingSchedule::new(
             EPS_MIN,
@@ -144,7 +143,7 @@ pub fn spawn_env_thread(
             TARGET_UPDATE_INTERVAL_STEPS,
         );
         const ALPHA: f64 = 0.6;
-        let mut agent = PrioritizedReplayWrapper::wrap(BasicModel::new(), MEMORY_CAPACITY, ALPHA);
+        let mut agent = RemoteReplayWrapper::wrap(BasicModel::new(), ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
             match mode {
