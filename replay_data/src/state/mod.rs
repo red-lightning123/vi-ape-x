@@ -6,7 +6,7 @@ mod saved;
 
 pub use compressed::CompressedState;
 pub use compressed_rc::CompressedRcState;
-use generic::GenericState;
+pub use generic::GenericState;
 pub use normal::State;
 pub use saved::SavedState;
 

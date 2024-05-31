@@ -1,35 +1,16 @@
 mod model_fns;
+mod to_pixels;
 
 use super::traits::{
     Actor, BasicLearner, ParamFetcher, Persistable, PrioritizedLearner, TargetNet,
 };
 use super::LearningStepInfo;
 use crate::Params;
-use image::{ImageOwned, ImageRef2};
 use model_fns::ModelFns;
-use replay_data::{CompressedRcState, CompressedRcTransition, State};
+use replay_data::GenericTransition;
 use std::path::Path;
 use tensorflow::{Graph, SavedModelBundle, SessionOptions, Tensor};
-
-fn extract_planes(frame: &ImageRef2) -> (Vec<u8>, Vec<u8>) {
-    frame.data().chunks(2).map(|a| (a[0], a[1])).unzip()
-}
-
-fn frame_to_pixels(frame: &ImageRef2) -> Vec<u8> {
-    let (plane_0, plane_1) = extract_planes(frame);
-    [plane_0, plane_1].concat()
-}
-
-fn state_to_pixels(state: &CompressedRcState) -> Vec<u8> {
-    let state: State = state.into();
-    state
-        .frames()
-        .iter()
-        .map(|frame| frame.as_ref())
-        .map(|frame| frame_to_pixels(&frame))
-        .collect::<Vec<_>>()
-        .concat()
-}
+use to_pixels::ToPixels;
 
 pub struct BasicModel {
     model_bundle: SavedModelBundle,
@@ -47,9 +28,12 @@ impl BasicModel {
     }
 }
 
-impl Actor<CompressedRcState> for BasicModel {
-    fn best_action(&self, state: &CompressedRcState) -> u8 {
-        let state_values = state_to_pixels(state);
+impl<State> Actor<State> for BasicModel
+where
+    State: ToPixels,
+{
+    fn best_action(&self, state: &State) -> u8 {
+        let state_values = state.to_pixels();
         let state_arg = Tensor::new(&[8, 72, 128])
             .with_values(&state_values)
             .unwrap();
@@ -62,8 +46,11 @@ impl Actor<CompressedRcState> for BasicModel {
     }
 }
 
-impl BasicLearner<CompressedRcTransition> for BasicModel {
-    fn train_batch(&mut self, batch: &[&CompressedRcTransition]) -> LearningStepInfo {
+impl<State> BasicLearner<GenericTransition<State>> for BasicModel
+where
+    State: ToPixels,
+{
+    fn train_batch(&mut self, batch: &[&GenericTransition<State>]) -> LearningStepInfo {
         let batch_len = batch.len();
         let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
         let mut next_states = Vec::with_capacity(batch_len * 8 * 72 * 128);
@@ -71,8 +58,8 @@ impl BasicLearner<CompressedRcTransition> for BasicModel {
         let mut rewards = Vec::with_capacity(batch_len);
         let mut dones = Vec::with_capacity(batch_len);
         for transition in batch {
-            states.extend(state_to_pixels(&transition.state));
-            next_states.extend(state_to_pixels(&transition.next_state));
+            states.extend(transition.state.to_pixels());
+            next_states.extend(transition.next_state.to_pixels());
             actions.push(transition.action);
             rewards.push(transition.reward as f32);
             dones.push(f32::from(u8::from(transition.terminated)));
@@ -106,10 +93,13 @@ impl BasicLearner<CompressedRcTransition> for BasicModel {
     }
 }
 
-impl PrioritizedLearner<CompressedRcTransition> for BasicModel {
+impl<State> PrioritizedLearner<GenericTransition<State>> for BasicModel
+where
+    State: ToPixels,
+{
     fn train_batch_prioritized(
         &mut self,
-        batch_transitions: &[&CompressedRcTransition],
+        batch_transitions: &[&GenericTransition<State>],
         batch_probabilities: &[f64],
         min_probability: f64,
         replay_memory_len: usize,
@@ -122,8 +112,8 @@ impl PrioritizedLearner<CompressedRcTransition> for BasicModel {
         let mut rewards = Vec::with_capacity(batch_len);
         let mut dones = Vec::with_capacity(batch_len);
         for transition in batch_transitions {
-            states.extend(state_to_pixels(&transition.state));
-            next_states.extend(state_to_pixels(&transition.next_state));
+            states.extend(transition.state.to_pixels());
+            next_states.extend(transition.next_state.to_pixels());
             actions.push(transition.action);
             rewards.push(transition.reward as f32);
             dones.push(f32::from(u8::from(transition.terminated)));
