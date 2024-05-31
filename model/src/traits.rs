@@ -1,19 +1,18 @@
 use super::{LearningStepInfo, Params};
-use replay_data::{CompressedRcState, CompressedRcTransition};
 use std::path::Path;
 
-pub trait Actor {
-    fn best_action(&self, state: &CompressedRcState) -> u8;
+pub trait Actor<State> {
+    fn best_action(&self, state: &State) -> u8;
 }
 
-pub trait BasicLearner {
-    fn train_batch(&mut self, batch: &[&CompressedRcTransition]) -> LearningStepInfo;
+pub trait BasicLearner<Transition> {
+    fn train_batch(&mut self, batch: &[&Transition]) -> LearningStepInfo;
 }
 
-pub trait PrioritizedLearner {
+pub trait PrioritizedLearner<Transition> {
     fn train_batch_prioritized(
         &mut self,
-        batch_transitions: &[&CompressedRcTransition],
+        batch_transitions: &[&Transition],
         batch_probabilities: &[f64],
         min_probability: f64,
         replay_memory_len: usize,

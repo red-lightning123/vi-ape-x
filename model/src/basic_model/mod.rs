@@ -47,7 +47,7 @@ impl BasicModel {
     }
 }
 
-impl Actor for BasicModel {
+impl Actor<CompressedRcState> for BasicModel {
     fn best_action(&self, state: &CompressedRcState) -> u8 {
         let state_values = state_to_pixels(state);
         let state_arg = Tensor::new(&[8, 72, 128])
@@ -62,7 +62,7 @@ impl Actor for BasicModel {
     }
 }
 
-impl BasicLearner for BasicModel {
+impl BasicLearner<CompressedRcTransition> for BasicModel {
     fn train_batch(&mut self, batch: &[&CompressedRcTransition]) -> LearningStepInfo {
         let batch_len = batch.len();
         let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
@@ -106,7 +106,7 @@ impl BasicLearner for BasicModel {
     }
 }
 
-impl PrioritizedLearner for BasicModel {
+impl PrioritizedLearner<CompressedRcTransition> for BasicModel {
     fn train_batch_prioritized(
         &mut self,
         batch_transitions: &[&CompressedRcTransition],

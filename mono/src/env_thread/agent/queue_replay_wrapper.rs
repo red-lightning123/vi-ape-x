@@ -22,13 +22,13 @@ impl<T> QueueReplayWrapper<T> {
     }
 }
 
-impl<T: Actor> Actor for QueueReplayWrapper<T> {
-    fn best_action(&self, state: &CompressedRcState) -> u8 {
+impl<T: Actor<State>, State> Actor<State> for QueueReplayWrapper<T> {
+    fn best_action(&self, state: &State) -> u8 {
         self.model.best_action(state)
     }
 }
 
-impl<T: BasicLearner> QueueReplayWrapper<T> {
+impl<T: BasicLearner<CompressedRcTransition>> QueueReplayWrapper<T> {
     pub fn train_step(&mut self) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {

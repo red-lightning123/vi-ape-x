@@ -1,7 +1,7 @@
 use super::replay::ReplayRemote;
 use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use model::LearningStepInfo;
-use replay_data::{CompressedRcState, CompressedRcTransition};
+use replay_data::CompressedTransition;
 use std::fs;
 use std::path::Path;
 
@@ -19,20 +19,18 @@ impl<T> RemoteReplayWrapper<T> {
             alpha,
         }
     }
-    pub fn remember(&mut self, transition: CompressedRcTransition) {
-        self.memory
-            .add_transition(todo!("convert transition to CompressedTransition"));
+    pub fn remember(&mut self, transition: CompressedTransition) {
+        self.memory.add_transition(transition);
     }
 }
 
-impl<T: Actor> Actor for RemoteReplayWrapper<T> {
-    fn best_action(&self, state: &CompressedRcState) -> u8 {
-        self.model
-            .best_action(todo!("convert state to CompressedState"))
+impl<T: Actor<State>, State> Actor<State> for RemoteReplayWrapper<T> {
+    fn best_action(&self, state: &State) -> u8 {
+        self.model.best_action(state)
     }
 }
 
-impl<T: PrioritizedLearner> RemoteReplayWrapper<T> {
+impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
     pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {
@@ -40,7 +38,7 @@ impl<T: PrioritizedLearner> RemoteReplayWrapper<T> {
                 self.memory.sample_batch(BATCH_SIZE);
             let min_probability = self.memory.min_probability();
             let (step_info, batch_abs_td_errors) = self.model.train_batch_prioritized(
-                todo!("convert batch_transitions to CompressedRcTransitions"),
+                &batch_transitions,
                 &batch_probabilities,
                 min_probability,
                 self.memory.len(),

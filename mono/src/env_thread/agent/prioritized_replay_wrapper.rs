@@ -24,13 +24,13 @@ impl<T> PrioritizedReplayWrapper<T> {
     }
 }
 
-impl<T: Actor> Actor for PrioritizedReplayWrapper<T> {
-    fn best_action(&self, state: &CompressedRcState) -> u8 {
+impl<T: Actor<State>, State> Actor<State> for PrioritizedReplayWrapper<T> {
+    fn best_action(&self, state: &State) -> u8 {
         self.model.best_action(state)
     }
 }
 
-impl<T: PrioritizedLearner> PrioritizedReplayWrapper<T> {
+impl<T: PrioritizedLearner<CompressedRcTransition>> PrioritizedReplayWrapper<T> {
     pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
         if self.memory.len() >= BATCH_SIZE {
