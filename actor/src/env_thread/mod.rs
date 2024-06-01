@@ -1,7 +1,7 @@
 mod agent;
 mod env;
-mod frame_stack;
 mod plot_datum_sender;
+mod state_accums;
 mod training_schedule;
 
 use crate::{
@@ -11,16 +11,21 @@ use crate::{
 use agent::RemoteReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
-use frame_stack::FrameStack;
 use image::ImageOwned2;
 use model::traits::{Actor, Persistable, TargetNet};
 use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
+use state_accums::filters::{CompressFilter, Filter, FilterPipe, RcFilter};
+use state_accums::{FrameStack, PipeFilterToAccum};
 use training_schedule::TrainingSchedule;
 
-type ConcreteEnv = Env<FrameStack>;
+type CompressThenRcFilter =
+    FilterPipe<CompressFilter, RcFilter<<CompressFilter as Filter>::Output>>;
+type Accum =
+    PipeFilterToAccum<CompressThenRcFilter, FrameStack<<CompressThenRcFilter as Filter>::Output>>;
+type ConcreteEnv = Env<Accum>;
 
 fn random_action() -> u8 {
     rand::thread_rng().gen_range(0..ConcreteEnv::n_actions())
