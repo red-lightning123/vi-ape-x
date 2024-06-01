@@ -42,6 +42,11 @@ impl<V: Copy, Q: Query<V>> QueryTree<V, Q> {
         self.update_ancestors(leaf);
     }
 
+    // assumes a leaf was provided
+    pub fn reset_value(&mut self, leaf: usize) {
+        self.update_value(leaf, Q::default());
+    }
+
     fn update_ancestors(&mut self, mut node: usize) {
         while let Some(parent) = self.tree.parent(node) {
             let value = Q::children_query(&self.tree, parent);

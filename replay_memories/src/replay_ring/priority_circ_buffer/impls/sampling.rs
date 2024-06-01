@@ -17,7 +17,7 @@ where
             .priorities
             .sample_from_range(range_start, range_end, rng);
         let priority = self.priorities.priority(index);
-        let value = &self.values[index];
+        let value = self.values[index].as_ref().unwrap();
         (index, priority, value)
     }
     pub fn sample<R>(&self, rng: &mut R) -> (usize, P, &V)
@@ -26,7 +26,7 @@ where
     {
         let index = self.priorities.sample(rng);
         let priority = self.priorities.priority(index);
-        let value = &self.values[index];
+        let value = self.values[index].as_ref().unwrap();
         (index, priority, value)
     }
 }

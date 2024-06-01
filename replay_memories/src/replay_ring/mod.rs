@@ -20,6 +20,9 @@ impl ReplayRing {
             transitions: PriorityCircBuffer::with_max_size(max_size),
         }
     }
+    pub fn truncate(&mut self, truncated_len: usize) {
+        self.transitions.truncate(truncated_len);
+    }
     pub fn update_priorities(&mut self, indices: &[usize], priorities: &[f64]) {
         for (index, priority) in indices.iter().zip(priorities.iter()) {
             self.transitions.update_priority(*index, *priority);

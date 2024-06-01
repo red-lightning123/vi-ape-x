@@ -40,4 +40,11 @@ impl<P: Priority> PriorityTree<P> {
         self.min_tree.update_value(leaf, priority.into());
         self.max_tree.update_value(leaf, priority.into());
     }
+
+    pub fn reset(&mut self, index: usize) {
+        let leaf = self.first_leaf + index;
+        self.sum_tree.reset_value(leaf);
+        self.min_tree.reset_value(leaf);
+        self.max_tree.reset_value(leaf);
+    }
 }

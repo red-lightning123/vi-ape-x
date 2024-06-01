@@ -39,4 +39,8 @@ impl<V: Copy + Zero + std::ops::Add<Output = V>> SumTree<V> {
     pub fn update_value(&mut self, leaf: usize, value: V) {
         self.tree.update_value(leaf, value)
     }
+
+    pub fn reset_value(&mut self, leaf: usize) {
+        self.tree.reset_value(leaf)
+    }
 }
