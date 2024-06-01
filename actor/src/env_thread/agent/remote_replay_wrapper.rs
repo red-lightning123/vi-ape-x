@@ -1,7 +1,7 @@
 use super::replay::ReplayRemote;
 use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use model::{BasicModel, LearningStepInfo};
-use packets::{SampleBatchErrorKind, SampleBatchReply, SampleBatchResult};
+use packets::{PriorityUpdate, SampleBatchErrorKind, SampleBatchReply, SampleBatchResult};
 use replay_data::CompressedTransition;
 use std::fs;
 use std::path::Path;
@@ -20,15 +20,32 @@ impl<T> RemoteReplayWrapper<T> {
             alpha,
         }
     }
+
+    fn convert_abs_td_error_to_priority(&self, abs_td_error: f64) -> f64 {
+        const EPSILON: f64 = 0.001;
+        (abs_td_error + EPSILON).powf(self.alpha)
+    }
+
+    fn update_priorities_from_td_errors(&mut self, indices: &[usize], abs_td_errors: &[f64]) {
+        let priorities = abs_td_errors
+            .into_iter()
+            .map(|abs_td_error| self.convert_abs_td_error_to_priority(*abs_td_error));
+        let updates = priorities
+            .zip(indices.into_iter())
+            .map(|(priority, index)| PriorityUpdate {
+                index: *index,
+                priority,
+            });
+        self.memory.update_priorities(updates.collect());
+    }
 }
 
 impl RemoteReplayWrapper<BasicModel> {
     fn compute_priority(&self, transition: &CompressedTransition) -> f64 {
-        const EPSILON: f64 = 0.001;
-
         let abs_td_error: f64 = self.model.compute_abs_td_errors(&[transition])[0].into();
-        (abs_td_error + EPSILON).powf(self.alpha)
+        self.convert_abs_td_error_to_priority(abs_td_error)
     }
+
     pub fn remember(&mut self, transition: CompressedTransition) {
         let priority = self.compute_priority(&transition);
         self.memory
@@ -57,8 +74,7 @@ impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
             replay_len,
             beta,
         );
-        self.memory
-            .update_priorities_with_td_errors(&indices, &abs_td_errors, self.alpha);
+        self.update_priorities_from_td_errors(&indices, &abs_td_errors);
         step_info
     }
 

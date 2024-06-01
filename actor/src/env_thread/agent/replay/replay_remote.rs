@@ -1,4 +1,4 @@
-use packets::{Insertion, ReplayRequest, SampleBatchResult};
+use packets::{Insertion, PriorityUpdate, ReplayRequest, SampleBatchResult};
 use replay_data::CompressedTransition;
 use std::{net::TcpStream, path::Path};
 
@@ -8,13 +8,15 @@ impl ReplayRemote {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn update_priorities_with_td_errors(
-        &mut self,
-        _indices: &[usize],
-        _abs_td_errors: &[f64],
-        _alpha: f64,
-    ) {
-        todo!()
+    pub fn update_priorities(&mut self, batch: Vec<PriorityUpdate>) {
+        let request = ReplayRequest::UpdateBatchPriorities { batch };
+        let stream = match TcpStream::connect("localhost:43430") {
+            Ok(stream) => stream,
+            Err(e) => {
+                panic!("Could not connect to replay server: {}", e);
+            }
+        };
+        bincode::serialize_into(stream, &request).unwrap();
     }
     pub fn add_transition_with_priority(
         &mut self,
