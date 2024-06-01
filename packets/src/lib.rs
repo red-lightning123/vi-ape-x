@@ -26,6 +26,7 @@ pub struct PriorityUpdate {
 
 #[derive(Serialize, Deserialize)]
 pub enum ReplayRequest {
+    Truncate,
     SampleBatch { batch_len: usize },
     InsertBatch { batch: Vec<Insertion> },
     UpdateBatchPriorities { batch: Vec<PriorityUpdate> },
