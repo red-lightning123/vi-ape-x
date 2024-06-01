@@ -17,13 +17,14 @@ fn spawn_batch_learner_thread(
     std::thread::spawn(move || {
         const TARGET_UPDATE_INTERVAL_STEPS: u32 = 2_500;
         const BETA: f64 = 0.4;
-        let schedule = LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS);
+        let mut schedule = LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS);
         loop {
             let mut agent = agent.write().unwrap();
             agent.train_step(BETA);
             if schedule.is_time_to_update_target() {
                 agent.copy_control_to_target();
             }
+            schedule.step();
         }
     })
 }
