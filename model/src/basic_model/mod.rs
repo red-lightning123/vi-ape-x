@@ -26,6 +26,48 @@ impl BasicModel {
         let fns = ModelFns::new(&model_bundle, &graph);
         Self { model_bundle, fns }
     }
+
+    pub fn compute_abs_td_errors<State>(&self, batch: &[&GenericTransition<State>]) -> Vec<f32>
+    where
+        State: ToPixels,
+    {
+        let batch_len = batch.len();
+        let mut states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut next_states = Vec::with_capacity(batch_len * 8 * 72 * 128);
+        let mut actions = Vec::with_capacity(batch_len);
+        let mut rewards = Vec::with_capacity(batch_len);
+        let mut dones = Vec::with_capacity(batch_len);
+        for transition in batch {
+            states.extend(transition.state.to_pixels());
+            next_states.extend(transition.next_state.to_pixels());
+            actions.push(transition.action);
+            rewards.push(transition.reward as f32);
+            dones.push(f32::from(u8::from(transition.terminated)));
+        }
+
+        let batch_len = batch_len.try_into().unwrap();
+        let states_arg = Tensor::new(&[batch_len, 8, 72, 128])
+            .with_values(&states)
+            .unwrap();
+        let next_states_arg = Tensor::new(&[batch_len, 8, 72, 128])
+            .with_values(&next_states)
+            .unwrap();
+        let actions_arg = Tensor::new(&[batch_len]).with_values(&actions).unwrap();
+        let rewards_arg = Tensor::new(&[batch_len]).with_values(&rewards).unwrap();
+        let dones_arg = Tensor::new(&[batch_len]).with_values(&dones).unwrap();
+
+        let (abs_td_errors,): (Tensor<f32>,) = self.fns.compute_abs_td_errors.call(
+            &self.model_bundle.session,
+            (
+                states_arg,
+                next_states_arg,
+                actions_arg,
+                rewards_arg,
+                dones_arg,
+            ),
+        );
+        abs_td_errors.to_vec()
+    }
 }
 
 impl<State> Actor<State> for BasicModel

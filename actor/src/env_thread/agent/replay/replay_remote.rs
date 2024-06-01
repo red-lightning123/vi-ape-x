@@ -5,7 +5,22 @@ use std::{net::TcpStream, path::Path};
 pub struct ReplayRemote {}
 
 impl ReplayRemote {
-    fn add_transition_with_priority(&mut self, transition: CompressedTransition, priority: f64) {
+    pub fn new() -> Self {
+        Self {}
+    }
+    pub fn update_priorities_with_td_errors(
+        &mut self,
+        _indices: &[usize],
+        _abs_td_errors: &[f64],
+        _alpha: f64,
+    ) {
+        todo!()
+    }
+    pub fn add_transition_with_priority(
+        &mut self,
+        transition: CompressedTransition,
+        priority: f64,
+    ) {
         let request = ReplayRequest::InsertBatch {
             batch: vec![Insertion {
                 priority,
@@ -19,23 +34,6 @@ impl ReplayRemote {
             }
         };
         bincode::serialize_into(stream, &request).unwrap();
-    }
-    fn initial_priority(&self) -> f64 {
-        todo!()
-    }
-    pub fn new() -> Self {
-        Self {}
-    }
-    pub fn update_priorities_with_td_errors(
-        &mut self,
-        _indices: &[usize],
-        _abs_td_errors: &[f64],
-        _alpha: f64,
-    ) {
-        todo!()
-    }
-    pub fn add_transition(&mut self, transition: CompressedTransition) {
-        self.add_transition_with_priority(transition, self.initial_priority());
     }
     pub fn sample_batch(
         &self,

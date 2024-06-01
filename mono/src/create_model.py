@@ -112,6 +112,13 @@ class Model(tf.Module):
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
         return loss_value, tf.abs(td_errors)
     @tf.function
+    def compute_abs_td_errors(self, states, updated_qvals, actions):
+        action_masks = tf.one_hot(actions, self.n_actions)
+        predicted_qvals = self.model(states, training=True)
+        relevant_qvals = tf.reduce_sum(tf.multiply(predicted_qvals, action_masks), axis=1)
+        td_errors = updated_qvals - relevant_qvals
+        return tf.abs(td_errors)
+    @tf.function
     def save(self, path):
         for variable in self.model.variables:
             tf.io.write_file(tf.strings.join([path, "/model/", variable.name]), tf.io.serialize_tensor(variable))
@@ -201,6 +208,20 @@ class Agent(tf.Module):
         avg_target_new_state_qval = tf.math.reduce_mean(target_new_state_qvals)
         return loss, avg_target_new_state_qval, abs_td_errors
     @tf.function
+    def compute_abs_td_errors(self, states, new_states, actions, rewards, dones):
+        gamma_pow_n = GAMMA**N_STEPS
+        control_new_state_qvals = self.control_model(new_states)
+        target_new_state_qvals = self.target_model(new_states)
+        next_actions = tf.argmax(control_new_state_qvals, axis=1)
+        updated_qvals = rewards + (1 - dones) * gamma_pow_n * tf.gather(target_new_state_qvals, next_actions, batch_dims=1)
+
+        abs_td_errors = self.control_model.compute_abs_td_errors(
+            states,
+            updated_qvals,
+            actions
+        )
+        return abs_td_errors
+    @tf.function
     def copy_control_to_target(self):
         '''
         copying only trainable weights means non-trainable variables like the
@@ -245,6 +266,7 @@ path = tf.TensorSpec([], dtype=tf.string)
 best_action = agent.best_action.get_concrete_function(single_state)
 train_pred_step = agent.train_pred_step.get_concrete_function(states, next_states, actions, rewards, dones)
 train_pred_step_prioritized = agent.train_pred_step_prioritized.get_concrete_function(states, next_states, actions, rewards, dones, probabilities, min_probability, replay_memory_len, beta)
+compute_abs_td_errors = agent.compute_abs_td_errors.get_concrete_function(states, next_states, actions, rewards, dones)
 copy_control_to_target = agent.copy_control_to_target.get_concrete_function()
 save = agent.save.get_concrete_function(path)
 load = agent.load.get_concrete_function(path)
@@ -256,6 +278,7 @@ signatures = {
     "best_action": best_action,
     "train_pred_step": train_pred_step,
     "train_pred_step_prioritized": train_pred_step_prioritized,
+    "compute_abs_td_errors": compute_abs_td_errors,
     "copy_control_to_target": copy_control_to_target,
     "save": save,
     "load": load,

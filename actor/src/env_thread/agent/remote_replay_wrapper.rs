@@ -1,6 +1,6 @@
 use super::replay::ReplayRemote;
 use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
-use model::LearningStepInfo;
+use model::{BasicModel, LearningStepInfo};
 use replay_data::CompressedTransition;
 use std::fs;
 use std::path::Path;
@@ -19,8 +19,19 @@ impl<T> RemoteReplayWrapper<T> {
             alpha,
         }
     }
+}
+
+impl RemoteReplayWrapper<BasicModel> {
+    fn compute_priority(&self, transition: &CompressedTransition) -> f64 {
+        const EPSILON: f64 = 0.001;
+
+        let abs_td_error: f64 = self.model.compute_abs_td_errors(&[transition])[0].into();
+        (abs_td_error + EPSILON).powf(self.alpha)
+    }
     pub fn remember(&mut self, transition: CompressedTransition) {
-        self.memory.add_transition(transition);
+        let priority = self.compute_priority(&transition);
+        self.memory
+            .add_transition_with_priority(transition, priority);
     }
 }
 

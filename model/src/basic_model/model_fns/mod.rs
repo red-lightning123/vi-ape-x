@@ -7,6 +7,7 @@ pub struct ModelFns {
     pub best_action: TensorflowFn<1, 1>,
     pub train_batch: TensorflowFn<5, 2>,
     pub train_batch_prioritized: TensorflowFn<9, 3>,
+    pub compute_abs_td_errors: TensorflowFn<5, 1>,
     pub copy_control_to_target: TensorflowFn<0, 1>,
     pub save: TensorflowFn<1, 1>,
     pub load: TensorflowFn<1, 1>,
@@ -47,6 +48,13 @@ impl ModelFns {
                     "beta",
                 ],
                 [("output_0", 0), ("output_1", 1), ("output_2", 2)],
+            ),
+            compute_abs_td_errors: TensorflowFn::new(
+                model_bundle,
+                graph,
+                "compute_abs_td_errors",
+                ["states", "new_states", "actions", "rewards", "dones"],
+                [("output_0", 0)],
             ),
             copy_control_to_target: TensorflowFn::new(
                 model_bundle,
