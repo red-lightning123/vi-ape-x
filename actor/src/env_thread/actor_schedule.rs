@@ -6,11 +6,16 @@ use std::path::Path;
 pub struct ActorSchedule {
     n_step: u32,
     eps: f64,
+    param_update_interval_steps: u32,
 }
 
 impl ActorSchedule {
-    pub fn new(eps: f64) -> Self {
-        Self { n_step: 0, eps }
+    pub fn new(eps: f64, param_update_interval_steps: u32) -> Self {
+        Self {
+            n_step: 0,
+            eps,
+            param_update_interval_steps,
+        }
     }
     pub fn eps(&self) -> f64 {
         self.eps
@@ -20,6 +25,9 @@ impl ActorSchedule {
     }
     pub fn step(&mut self) {
         self.n_step += 1;
+    }
+    pub fn is_time_to_update_params(&self) -> bool {
+        self.n_step % self.param_update_interval_steps == 0
     }
     pub fn save<P: AsRef<Path>>(&self, path: P) {
         let file = create_file_buf_write(path.as_ref().join("schedule")).unwrap();

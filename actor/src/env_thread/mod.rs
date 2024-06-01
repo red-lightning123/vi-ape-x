@@ -11,14 +11,16 @@ use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
-use model::traits::{Actor, Persistable, TargetNet};
-use model::BasicModel;
+use model::traits::{Actor, ParamFetcher, Persistable, TargetNet};
+use model::{BasicModel, Params};
+use packets::{GetParamsReply, LearnerRequest};
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
+use std::net::TcpStream;
 
 type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
@@ -29,6 +31,19 @@ fn random_action() -> u8 {
 
 const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
+
+fn get_params_from_learner() -> Params {
+    let request = LearnerRequest::GetParams;
+    let stream = match TcpStream::connect("localhost:43431") {
+        Ok(stream) => stream,
+        Err(e) => {
+            panic!("Could not connect to replay server: {}", e);
+        }
+    };
+    bincode::serialize_into(&stream, &request).unwrap();
+    let GetParamsReply { params } = bincode::deserialize_from(stream).unwrap();
+    params
+}
 
 fn step(
     env: &mut ConcreteEnv,
@@ -71,6 +86,10 @@ fn step(
             plot_datum_sender.send_episode_score(score, schedule);
         }
         agent.remember(transition);
+    }
+    if schedule.is_time_to_update_params() {
+        let params = get_params_from_learner();
+        agent.set_params(params);
     }
     schedule.step();
     should_hold
@@ -117,10 +136,11 @@ pub fn spawn_env_thread(
     plot_thread_sender: Sender<PlotThreadMessage>,
 ) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
+        const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
         const ALPHA: f64 = 0.6;
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let eps = rand::thread_rng().gen();
-        let mut schedule = ActorSchedule::new(eps);
+        let mut schedule = ActorSchedule::new(eps, PARAM_UPDATE_INTERVAL_STEPS);
         let mut agent = RemoteReplayWrapper::wrap(BasicModel::new(), ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
