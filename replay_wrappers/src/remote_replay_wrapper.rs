@@ -1,8 +1,8 @@
-use super::replay::ReplayRemote;
 use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use model::{BasicModel, LearningStepInfo};
 use packets::{PriorityUpdate, SampleBatchErrorKind, SampleBatchReply, SampleBatchResult};
 use replay_data::CompressedTransition;
+use replay_memories::ReplayRemote;
 use std::fs;
 use std::path::Path;
 

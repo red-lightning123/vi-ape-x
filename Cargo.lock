@@ -667,8 +667,8 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "packets",
- "rand",
  "replay_data",
+ "replay_memories",
  "serde",
 ]
 
@@ -682,16 +682,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "replay_wrappers"
+name = "replay_memories"
 version = "0.1.0"
 dependencies = [
  "bincode",
  "file_io",
- "model",
  "packets",
  "rand",
  "replay_data",
  "serde",
+]
+
+[[package]]
+name = "replay_wrappers"
+version = "0.1.0"
+dependencies = [
+ "model",
+ "packets",
+ "replay_data",
+ "replay_memories",
 ]
 
 [[package]]

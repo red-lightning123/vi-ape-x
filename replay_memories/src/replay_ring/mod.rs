@@ -9,11 +9,11 @@ impl Zero for f64 {
     }
 }
 
-pub struct ReplayPrioritized {
+pub struct ReplayRing {
     transitions: PriorityCircBuffer<f64, CompressedTransition>,
 }
 
-impl ReplayPrioritized {
+impl ReplayRing {
     pub fn add_transition_with_priority(
         &mut self,
         transition: CompressedTransition,

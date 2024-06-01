@@ -11,5 +11,6 @@ members = [
   "packets",
   "replay",
   "replay_data",
+  "replay_memories",
   "replay_wrappers",
 ]

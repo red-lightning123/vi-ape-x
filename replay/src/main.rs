@@ -1,15 +1,14 @@
-mod replay_prioritized;
 mod serializer_hack;
 
 use packets::{ReplayRequest, SampleBatchErrorKind, SampleBatchResult};
-use replay_prioritized::ReplayPrioritized;
+use replay_memories::ReplayRing;
 use serializer_hack::{SampleBatchReplySerializer, SampleBatchResultSerializer};
 use std::net::TcpListener;
 
 fn main() {
     const REPLAY_MAX_LEN: usize = 2_000_000;
     let socket = TcpListener::bind("localhost:43430").unwrap();
-    let mut replay = ReplayPrioritized::with_max_size(REPLAY_MAX_LEN);
+    let mut replay = ReplayRing::with_max_size(REPLAY_MAX_LEN);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();
         let request = bincode::deserialize_from(&stream).unwrap();
