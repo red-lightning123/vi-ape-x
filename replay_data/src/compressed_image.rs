@@ -1,7 +1,7 @@
 use image::{ImageOwned, ImageOwned2, ImageRef};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CompressedImageOwned2 {
     width: u32,
     height: u32,

@@ -1,6 +1,6 @@
-use std::marker::PhantomData;
 use super::filters::Filter;
 use crate::env_thread::env::StateAccum;
+use std::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct PipeFilterToAccum<F, A> {

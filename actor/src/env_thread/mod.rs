@@ -17,14 +17,11 @@ use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
-use state_accums::filters::{CompressFilter, Filter, FilterPipe, RcFilter};
+use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
 use training_schedule::TrainingSchedule;
 
-type CompressThenRcFilter =
-    FilterPipe<CompressFilter, RcFilter<<CompressFilter as Filter>::Output>>;
-type Accum =
-    PipeFilterToAccum<CompressThenRcFilter, FrameStack<<CompressThenRcFilter as Filter>::Output>>;
+type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
 
 fn random_action() -> u8 {
