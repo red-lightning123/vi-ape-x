@@ -1,6 +1,5 @@
 #![allow(dead_code, unused_imports)]
 mod env_thread;
-mod file_io;
 mod game;
 mod game_interface;
 mod game_thread;

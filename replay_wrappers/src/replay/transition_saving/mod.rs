@@ -1,6 +1,6 @@
 mod transition_serializer;
 
-use crate::file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
+use file_io::{create_file_buf_write, has_data_left, open_file_buf_read};
 use replay_data::{CompressedImageOwned2, CompressedRcTransition, SavedTransition};
 use std::path::Path;
 use std::rc::Rc;

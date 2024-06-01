@@ -1,6 +1,6 @@
 use super::transition_saving::{load_transitions, save_transitions};
 use super::PriorityCircBuffer;
-use crate::file_io::{create_file_buf_write, open_file_buf_read};
+use file_io::{create_file_buf_write, open_file_buf_read};
 use replay_data::CompressedRcTransition;
 use std::path::Path;
 

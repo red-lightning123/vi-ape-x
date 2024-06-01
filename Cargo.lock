@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "crossbeam-channel",
+ "file_io",
  "glow",
  "image",
  "jemallocator",
@@ -263,6 +264,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "file_io"
+version = "0.1.0"
+
+[[package]]
 name = "filetime"
 version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -480,6 +485,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "crossbeam-channel",
+ "file_io",
  "glow",
  "image",
  "jemallocator",
@@ -680,6 +686,7 @@ name = "replay_wrappers"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "file_io",
  "model",
  "packets",
  "rand",

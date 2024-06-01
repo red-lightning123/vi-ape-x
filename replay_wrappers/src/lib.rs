@@ -1,4 +1,3 @@
-mod file_io;
 mod prioritized_replay_wrapper;
 mod queue_replay_wrapper;
 mod remote_replay_wrapper;
