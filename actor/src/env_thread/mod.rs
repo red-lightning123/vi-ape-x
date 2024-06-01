@@ -20,15 +20,17 @@ use rand::Rng;
 use replay_data::State;
 use training_schedule::TrainingSchedule;
 
+type ConcreteEnv = Env<FrameStack>;
+
 fn random_action() -> u8 {
-    rand::thread_rng().gen_range(0..Env::n_actions())
+    rand::thread_rng().gen_range(0..ConcreteEnv::n_actions())
 }
 
 const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
 
 fn step(
-    env: &mut Env<FrameStack>,
+    env: &mut ConcreteEnv,
     agent: &mut RemoteReplayWrapper<BasicModel>,
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
@@ -119,7 +121,7 @@ pub enum EnvThreadMessage {
 }
 
 enum ThreadMode {
-    Running(Env<FrameStack>),
+    Running(ConcreteEnv),
     Held,
 }
 
