@@ -27,15 +27,10 @@ where
     }
     fn reset_to_current(&mut self) {
         let frame = self.stack.pop_back().unwrap();
-        *self = Self::from(frame);
+        *self = Self::from_frame(frame);
     }
-}
 
-impl<Frame> From<Frame> for FrameStack<Frame>
-where
-    Frame: Clone,
-{
-    fn from(frame: Frame) -> Self {
+    fn from_frame(frame: Self::Frame) -> Self {
         Self {
             stack: VecDeque::from([frame.clone(), frame.clone(), frame.clone(), frame]),
         }

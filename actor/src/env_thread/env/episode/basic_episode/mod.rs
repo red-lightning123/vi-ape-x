@@ -24,7 +24,7 @@ where
         const GAMMA: f64 = 0.99;
         Self {
             step_memory: StepMemory::new(N_STEPS, GAMMA),
-            state: State::from(frame),
+            state: State::from_frame(frame),
             score,
         }
     }

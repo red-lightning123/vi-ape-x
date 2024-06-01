@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-
 use super::filters::Filter;
 use crate::env_thread::env::StateAccum;
 
@@ -27,16 +26,10 @@ where
     fn reset_to_current(&mut self) {
         self.accum.reset_to_current()
     }
-}
 
-impl<F, A> From<<F as Filter>::Input> for PipeFilterToAccum<F, A>
-where
-    F: Filter,
-    A: StateAccum<Frame = <F as Filter>::Output>,
-{
-    fn from(frame: <F as Filter>::Input) -> Self {
+    fn from_frame(frame: Self::Frame) -> Self {
         Self {
-            accum: A::from(F::call(frame)),
+            accum: A::from_frame(F::call(frame)),
             _marker: PhantomData,
         }
     }
