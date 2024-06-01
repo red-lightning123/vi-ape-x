@@ -13,8 +13,10 @@ fn spawn_batch_learner_thread(
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
         const BETA: f64 = 0.4;
-        let mut agent = agent.write().unwrap();
-        agent.train_step(BETA);
+        loop {
+            let mut agent = agent.write().unwrap();
+            agent.train_step(BETA);
+        }
     })
 }
 
