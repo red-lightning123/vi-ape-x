@@ -1,4 +1,4 @@
-use super::episode::StateAccum;
+use super::env::StateAccum;
 use replay_data::{CompressedImageOwned2, CompressedRcState};
 use std::collections::VecDeque;
 use std::rc::Rc;

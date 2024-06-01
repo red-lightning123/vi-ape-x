@@ -1,5 +1,6 @@
 mod agent;
 mod env;
+mod frame_stack;
 mod plot_datum_sender;
 mod training_schedule;
 
@@ -10,6 +11,7 @@ use crate::{
 use agent::RemoteReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
+use frame_stack::FrameStack;
 use image::ImageOwned2;
 use model::traits::{Actor, Persistable, TargetNet};
 use model::BasicModel;
@@ -26,7 +28,7 @@ const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
 
 fn step(
-    env: &mut Env,
+    env: &mut Env<FrameStack>,
     agent: &mut RemoteReplayWrapper<BasicModel>,
     schedule: &mut TrainingSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
@@ -117,7 +119,7 @@ pub enum EnvThreadMessage {
 }
 
 enum ThreadMode {
-    Running(Env),
+    Running(Env<FrameStack>),
     Held,
 }
 

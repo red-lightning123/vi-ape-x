@@ -1,25 +1,32 @@
 mod episode;
-mod frame_stack;
 mod message_bridge;
 
 use super::EnvThreadMessage;
 use crate::GameThreadMessage;
 use crossbeam_channel::{Receiver, Sender};
+pub use episode::StateAccum;
 use episode::{BasicEpisode, Done, Status, TimeLimitedWrapper};
-use frame_stack::FrameStack;
+use image::ImageOwned2;
 pub use message_bridge::StepError;
 use message_bridge::{MessageBridge, Reply, Request};
-use replay_data::{CompressedImageOwned2, CompressedRcState, CompressedRcTransition};
+use replay_data::GenericTransition;
 use std::collections::VecDeque;
 
-pub struct Env {
+pub struct Env<State>
+where
+    State: StateAccum<Frame = ImageOwned2>,
+{
     bridge: MessageBridge,
-    episode: TimeLimitedWrapper<FrameStack>,
-    pending_transitions: VecDeque<(CompressedRcTransition, Option<u32>)>,
+    episode: TimeLimitedWrapper<State>,
+    pending_transitions: VecDeque<(GenericTransition<State::View>, Option<u32>)>,
     waiting_hold: bool,
 }
 
-impl Env {
+impl<State> Env<State>
+where
+    State: StateAccum<Frame = ImageOwned2>,
+    <State as StateAccum>::View: Clone,
+{
     pub fn new(
         receiver: Receiver<EnvThreadMessage>,
         game_thread_sender: Sender<GameThreadMessage>,
@@ -32,7 +39,7 @@ impl Env {
         } = reply;
         Ok(Self {
             bridge,
-            episode: TimeLimitedWrapper::new(BasicEpisode::new((&frame).into(), score)),
+            episode: TimeLimitedWrapper::new(BasicEpisode::new(frame, score)),
             pending_transitions: VecDeque::new(),
             waiting_hold: received_wait_for_hold,
         })
@@ -64,7 +71,7 @@ impl Env {
         self.episode = TimeLimitedWrapper::new(BasicEpisode::new(frame, score));
         Ok(())
     }
-    fn send(&mut self, request: Request) -> Result<(CompressedImageOwned2, u32), StepError> {
+    fn send(&mut self, request: Request) -> Result<(State::Frame, u32), StepError> {
         let Reply {
             frame,
             score,
@@ -73,12 +80,12 @@ impl Env {
         if received_wait_for_hold {
             self.waiting_hold = true;
         }
-        Ok(((&frame).into(), score))
+        Ok((frame, score))
     }
-    pub fn state(&self) -> CompressedRcState {
+    pub fn state(&self) -> State::View {
         self.episode.state()
     }
-    pub fn pop_transition(&mut self) -> Option<(CompressedRcTransition, Option<u32>)> {
+    pub fn pop_transition(&mut self) -> Option<(GenericTransition<State::View>, Option<u32>)> {
         self.pending_transitions.pop_front()
     }
     pub const fn n_actions() -> u8 {
