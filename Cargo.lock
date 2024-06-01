@@ -423,9 +423,11 @@ name = "learner"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "file_io",
  "model",
  "packets",
  "replay_wrappers",
+ "serde",
 ]
 
 [[package]]
