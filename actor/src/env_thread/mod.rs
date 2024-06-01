@@ -1,12 +1,13 @@
+mod actor_schedule;
 mod env;
 mod plot_datum_sender;
 mod state_accums;
-mod training_schedule;
 
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
+use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
@@ -18,7 +19,6 @@ use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
-use training_schedule::TrainingSchedule;
 
 type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
@@ -33,7 +33,7 @@ const THREAD_NAME: &str = "env";
 fn step(
     env: &mut ConcreteEnv,
     agent: &mut RemoteReplayWrapper<BasicModel>,
-    schedule: &mut TrainingSchedule,
+    schedule: &mut ActorSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
     plot_datum_sender: &PlotDatumSender,
@@ -46,8 +46,7 @@ fn step(
     ui_thread_sender
         .send(UiThreadMessage::NStep(schedule.n_step()))
         .unwrap();
-    let action = if schedule.is_on_eps_random() || rand::thread_rng().gen::<f64>() < schedule.eps()
-    {
+    let action = if rand::thread_rng().gen::<f64>() < schedule.eps() {
         random_action()
     } else {
         agent.best_action(&state)
@@ -118,20 +117,10 @@ pub fn spawn_env_thread(
     plot_thread_sender: Sender<PlotThreadMessage>,
 ) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
-        const EPS_MIN: f64 = 0.1;
-        const EPS_MAX: f64 = 1.0;
-        const N_EPS_RANDOM_STEPS: u32 = 100_000;
-        const N_EPS_GREEDY_STEPS: u32 = 1_000_000;
-        const TARGET_UPDATE_INTERVAL_STEPS: u32 = 10_000;
-        let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
-        let mut schedule = TrainingSchedule::new(
-            EPS_MIN,
-            EPS_MAX,
-            N_EPS_RANDOM_STEPS,
-            N_EPS_GREEDY_STEPS,
-            TARGET_UPDATE_INTERVAL_STEPS,
-        );
         const ALPHA: f64 = 0.6;
+        let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
+        let eps = rand::thread_rng().gen();
+        let mut schedule = ActorSchedule::new(eps);
         let mut agent = RemoteReplayWrapper::wrap(BasicModel::new(), ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
