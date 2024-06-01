@@ -1,4 +1,3 @@
-mod agent;
 mod env;
 mod plot_datum_sender;
 mod training_schedule;
@@ -7,7 +6,6 @@ use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
-use agent::PrioritizedReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
@@ -16,6 +14,7 @@ use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
+use replay_wrappers::PrioritizedReplayWrapper;
 use training_schedule::TrainingSchedule;
 
 fn random_action() -> u8 {

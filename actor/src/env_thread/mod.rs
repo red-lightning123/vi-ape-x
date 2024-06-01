@@ -1,4 +1,3 @@
-mod agent;
 mod env;
 mod plot_datum_sender;
 mod state_accums;
@@ -8,7 +7,6 @@ use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
-use agent::RemoteReplayWrapper;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
@@ -17,6 +15,7 @@ use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
+use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
 use training_schedule::TrainingSchedule;

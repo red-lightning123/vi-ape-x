@@ -10,4 +10,5 @@ members = [
   "packets",
   "replay",
   "replay_data",
+  "replay_wrappers",
 ]

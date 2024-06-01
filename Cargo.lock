@@ -16,6 +16,7 @@ dependencies = [
  "packets",
  "rand",
  "replay_data",
+ "replay_wrappers",
  "serde",
  "serde_json",
  "x11",
@@ -486,6 +487,7 @@ dependencies = [
  "model",
  "rand",
  "replay_data",
+ "replay_wrappers",
  "serde",
  "serde_json",
  "x11",
@@ -671,6 +673,18 @@ dependencies = [
  "image",
  "serde",
  "zstd 0.13.1",
+]
+
+[[package]]
+name = "replay_wrappers"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "model",
+ "packets",
+ "rand",
+ "replay_data",
+ "serde",
 ]
 
 [[package]]

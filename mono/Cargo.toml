@@ -18,6 +18,7 @@ glow = "0.12.3"
 image = { version = "0.1.0", path = "../image" }
 replay_data = { version = "0.1.0", path = "../replay_data" }
 model = { version = "0.1.0", path = "../model" }
+replay_wrappers = { version = "0.1.0", path = "../replay_wrappers" }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 jemallocator = "0.3.2"
