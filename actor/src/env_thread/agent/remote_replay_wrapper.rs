@@ -1,6 +1,7 @@
 use super::replay::ReplayRemote;
 use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
 use model::{BasicModel, LearningStepInfo};
+use packets::{SampleBatchErrorKind, SampleBatchReply, SampleBatchResult};
 use replay_data::CompressedTransition;
 use std::fs;
 use std::path::Path;
@@ -42,27 +43,32 @@ impl<T: Actor<State>, State> Actor<State> for RemoteReplayWrapper<T> {
 }
 
 impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
+    fn train_on_sampled_batch(&mut self, reply: SampleBatchReply, beta: f64) -> LearningStepInfo {
+        let SampleBatchReply {
+            batch,
+            min_probability,
+            replay_len,
+        } = reply;
+        let (indices, probabilities, transitions) = batch;
+        let (step_info, abs_td_errors) = self.model.train_batch_prioritized(
+            &transitions.iter().collect::<Vec<_>>(),
+            &probabilities,
+            min_probability,
+            replay_len,
+            beta,
+        );
+        self.memory
+            .update_priorities_with_td_errors(&indices, &abs_td_errors, self.alpha);
+        step_info
+    }
+
     pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 32;
-        if self.memory.len() >= BATCH_SIZE {
-            let (batch_indices, batch_probabilities, batch_transitions) =
-                self.memory.sample_batch(BATCH_SIZE);
-            let min_probability = self.memory.min_probability();
-            let (step_info, batch_abs_td_errors) = self.model.train_batch_prioritized(
-                &batch_transitions,
-                &batch_probabilities,
-                min_probability,
-                self.memory.len(),
-                beta,
-            );
-            self.memory.update_priorities_with_td_errors(
-                &batch_indices,
-                &batch_abs_td_errors,
-                self.alpha,
-            );
-            Some(step_info)
-        } else {
-            None
+        match self.memory.sample_batch(BATCH_SIZE) {
+            SampleBatchResult::Ok(reply) => Some(self.train_on_sampled_batch(reply, beta)),
+            SampleBatchResult::Err(err) => match err {
+                SampleBatchErrorKind::NotEnoughTransitions => None,
+            },
         }
     }
 }

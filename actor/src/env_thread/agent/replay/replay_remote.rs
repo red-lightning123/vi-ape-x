@@ -1,4 +1,4 @@
-use packets::{Insertion, ReplayRequest};
+use packets::{Insertion, ReplayRequest, SampleBatchResult};
 use replay_data::CompressedTransition;
 use std::{net::TcpStream, path::Path};
 
@@ -35,17 +35,16 @@ impl ReplayRemote {
         };
         bincode::serialize_into(stream, &request).unwrap();
     }
-    pub fn sample_batch(
-        &self,
-        _batch_size: usize,
-    ) -> (Vec<usize>, Vec<f64>, Vec<&CompressedTransition>) {
-        todo!()
-    }
-    pub fn min_probability(&self) -> f64 {
-        todo!()
-    }
-    pub fn len(&self) -> usize {
-        todo!()
+    pub fn sample_batch(&self, batch_len: usize) -> SampleBatchResult {
+        let request = ReplayRequest::SampleBatch { batch_len };
+        let stream = match TcpStream::connect("localhost:43430") {
+            Ok(stream) => stream,
+            Err(e) => {
+                panic!("Could not connect to replay server: {}", e);
+            }
+        };
+        bincode::serialize_into(&stream, &request).unwrap();
+        bincode::deserialize_from(stream).unwrap()
     }
     pub fn save<P: AsRef<Path>>(&self, _path: P) {
         todo!()
