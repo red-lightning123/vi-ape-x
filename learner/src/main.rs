@@ -11,7 +11,11 @@ use std::{
 fn spawn_batch_learner_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
 ) -> JoinHandle<()> {
-    std::thread::spawn(move || todo!())
+    std::thread::spawn(move || {
+        const BETA: f64 = 0.4;
+        let mut agent = agent.write().unwrap();
+        agent.train_step(BETA);
+    })
 }
 
 fn spawn_param_server_thread(
