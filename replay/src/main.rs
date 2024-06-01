@@ -18,7 +18,8 @@ fn main() {
                 replay.truncate(REPLAY_TRUNCATED_LEN);
             }
             ReplayRequest::SampleBatch { batch_len } => {
-                if replay.len() < batch_len {
+                const MIN_SAMPLING_REPLAY_SIZE: usize = 50_000;
+                if replay.len() < MIN_SAMPLING_REPLAY_SIZE {
                     let err = SampleBatchErrorKind::NotEnoughTransitions;
                     let result: SampleBatchResult = Err(err);
                     bincode::serialize_into(stream, &result).unwrap();
