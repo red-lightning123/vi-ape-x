@@ -425,6 +425,7 @@ dependencies = [
  "bincode",
  "model",
  "packets",
+ "replay_wrappers",
 ]
 
 [[package]]

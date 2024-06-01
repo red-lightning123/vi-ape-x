@@ -1,5 +1,5 @@
-use model::traits::{Actor, Persistable, PrioritizedLearner, TargetNet};
-use model::{BasicModel, LearningStepInfo};
+use model::traits::{Actor, ParamFetcher, Persistable, PrioritizedLearner, TargetNet};
+use model::{BasicModel, LearningStepInfo, Params};
 use packets::{PriorityUpdate, SampleBatchErrorKind, SampleBatchReply, SampleBatchResult};
 use replay_data::CompressedTransition;
 use replay_memories::ReplayRemote;
@@ -107,5 +107,15 @@ impl<T: Persistable> Persistable for RemoteReplayWrapper<T> {
         let path = path.as_ref();
         self.model.load(path.join("model_vars"));
         self.memory.load(path.join("memory"));
+    }
+}
+
+impl<T: ParamFetcher> ParamFetcher for RemoteReplayWrapper<T> {
+    fn params(&self) -> Params {
+        self.model.params()
+    }
+
+    fn set_params(&mut self, params: Params) {
+        self.model.set_params(params)
     }
 }
