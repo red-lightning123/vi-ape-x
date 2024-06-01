@@ -1,5 +1,5 @@
-use super::Priority;
 use super::PriorityCircBuffer;
+use priority_tree::Priority;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::ops::Div;

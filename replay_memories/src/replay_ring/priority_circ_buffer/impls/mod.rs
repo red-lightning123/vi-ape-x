@@ -1,7 +1,7 @@
 mod sampling;
 
 use super::PriorityCircBuffer;
-use super::{Priority, PriorityTree};
+use priority_tree::{Priority, PriorityTree};
 
 impl<P: Priority, V> PriorityCircBuffer<P, V> {
     pub fn with_max_size(max_size: usize) -> Self {

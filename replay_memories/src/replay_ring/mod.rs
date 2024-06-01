@@ -1,13 +1,7 @@
 mod priority_circ_buffer;
 
-use priority_circ_buffer::{PriorityCircBuffer, Zero};
+use priority_circ_buffer::PriorityCircBuffer;
 use replay_data::CompressedTransition;
-
-impl Zero for f64 {
-    fn zero() -> Self {
-        0.0
-    }
-}
 
 pub struct ReplayRing {
     transitions: PriorityCircBuffer<f64, CompressedTransition>,

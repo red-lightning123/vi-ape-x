@@ -599,6 +599,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
+name = "priority_tree"
+version = "0.1.0"
+dependencies = [
+ "rand",
+ "serde",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -688,9 +696,9 @@ dependencies = [
  "bincode",
  "file_io",
  "packets",
+ "priority_tree",
  "rand",
  "replay_data",
- "serde",
 ]
 
 [[package]]

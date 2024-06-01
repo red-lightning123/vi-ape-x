@@ -14,7 +14,7 @@ use nodes::{MaxNode, MinNode};
 pub use priority::Priority;
 use serde::{Deserialize, Serialize};
 use sum_tree::SumTree;
-pub use traits::{Infinity, NegativeInfinity, Zero};
+use traits::{Infinity, NegativeInfinity, Zero};
 
 #[derive(Serialize, Deserialize)]
 pub struct PriorityTree<P: Priority> {
@@ -22,4 +22,10 @@ pub struct PriorityTree<P: Priority> {
     min_tree: MinTree<MinNode<P>>,
     max_tree: MaxTree<MaxNode<P>>,
     first_leaf: usize,
+}
+
+impl Zero for f64 {
+    fn zero() -> Self {
+        0.0
+    }
 }

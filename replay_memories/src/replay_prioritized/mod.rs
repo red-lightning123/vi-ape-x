@@ -1,15 +1,9 @@
 mod priority_circ_buffer;
 
 use super::transition_saving;
-use priority_circ_buffer::{PriorityCircBuffer, Zero};
+use priority_circ_buffer::PriorityCircBuffer;
 use replay_data::CompressedRcTransition;
 use std::path::Path;
-
-impl Zero for f64 {
-    fn zero() -> Self {
-        0.0
-    }
-}
 
 const EPSILON: f64 = 0.001;
 

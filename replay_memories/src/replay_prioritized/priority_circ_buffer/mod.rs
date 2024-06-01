@@ -1,8 +1,6 @@
 mod impls;
-mod priority_tree;
 
 use super::transition_saving;
-pub use priority_tree::{Infinity, NegativeInfinity, Zero};
 use priority_tree::{Priority, PriorityTree};
 
 pub struct PriorityCircBuffer<P: Priority, V> {
