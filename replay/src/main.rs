@@ -27,24 +27,6 @@ fn main() {
                     };
                     let result: SampleBatchResultSerializer = Ok(reply);
                     bincode::serialize_into(&stream, &result).unwrap();
-
-                    // Wait for the client to send a priority update request,
-                    // then handle it
-                    let request = bincode::deserialize_from(stream).unwrap();
-                    match request {
-                        ReplayRequest::UpdateBatchPriorities { batch } => {
-                            let indices = batch
-                                .iter()
-                                .map(|priority_update| priority_update.index)
-                                .collect::<Vec<_>>();
-                            let priorities = batch
-                                .iter()
-                                .map(|priority_update| priority_update.priority)
-                                .collect::<Vec<_>>();
-                            replay.update_priorities(&indices, &priorities);
-                        }
-                        _ => panic!("client should update batch priorities immediately after sampling a batch"),
-                    }
                 }
             }
             ReplayRequest::InsertBatch { batch } => {
@@ -52,8 +34,16 @@ fn main() {
                     replay.add_transition_with_priority(insertion.transition, insertion.priority);
                 }
             }
-            ReplayRequest::UpdateBatchPriorities { batch: _ } => {
-                panic!("clients should only update batch priorities after sampling a batch")
+            ReplayRequest::UpdateBatchPriorities { batch } => {
+                let indices = batch
+                    .iter()
+                    .map(|priority_update| priority_update.index)
+                    .collect::<Vec<_>>();
+                let priorities = batch
+                    .iter()
+                    .map(|priority_update| priority_update.priority)
+                    .collect::<Vec<_>>();
+                replay.update_priorities(&indices, &priorities);
             }
         }
     }
