@@ -28,10 +28,10 @@ impl<T> RemoteReplayWrapper<T> {
 
     fn update_priorities_from_td_errors(&mut self, indices: &[usize], abs_td_errors: &[f64]) {
         let priorities = abs_td_errors
-            .into_iter()
+            .iter()
             .map(|abs_td_error| self.convert_abs_td_error_to_priority(*abs_td_error));
         let updates = priorities
-            .zip(indices.into_iter())
+            .zip(indices)
             .map(|(priority, index)| PriorityUpdate {
                 index: *index,
                 priority,

@@ -19,10 +19,12 @@ fn spawn_batch_learner_thread(
         const BETA: f64 = 0.4;
         let mut schedule = LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS);
         loop {
-            let mut agent = agent.write().unwrap();
-            agent.train_step(BETA);
-            if schedule.is_time_to_update_target() {
-                agent.copy_control_to_target();
+            {
+                let mut agent = agent.write().unwrap();
+                agent.train_step(BETA);
+                if schedule.is_time_to_update_target() {
+                    agent.copy_control_to_target();
+                }
             }
             schedule.step();
         }

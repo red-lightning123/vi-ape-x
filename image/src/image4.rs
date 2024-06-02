@@ -1,6 +1,6 @@
 use super::{ImageOwned, ImageRef, Zero};
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Color4(pub u8, pub u8, pub u8, pub u8);
 
 impl Color4 {

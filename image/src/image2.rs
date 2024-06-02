@@ -1,7 +1,7 @@
 use super::{ImageOwned, ImageRef, Zero};
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Color2(pub u8, pub u8);
 
 impl Color2 {
