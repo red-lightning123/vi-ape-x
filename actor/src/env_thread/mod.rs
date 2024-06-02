@@ -37,7 +37,7 @@ fn get_params_from_learner() -> Params {
     let stream = match TcpStream::connect("localhost:43431") {
         Ok(stream) => stream,
         Err(e) => {
-            panic!("Could not connect to replay server: {}", e);
+            panic!("Could not connect to learner: {}", e);
         }
     };
     tcp_io::serialize_into(&stream, &request).unwrap();
