@@ -1,10 +1,9 @@
 use packets::{Insertion, PriorityUpdate, ReplayRequest, SampleBatchResult};
-use replay_data::CompressedTransition;
-use std::{net::TcpStream, path::Path};
+use std::net::TcpStream;
 
-pub struct ReplayRemote {}
+pub struct ReplayClient {}
 
-impl ReplayRemote {
+impl ReplayClient {
     pub fn new() -> Self {
         Self {}
     }
@@ -18,17 +17,8 @@ impl ReplayRemote {
         };
         bincode::serialize_into(stream, &request).unwrap();
     }
-    pub fn add_transition_with_priority(
-        &mut self,
-        transition: CompressedTransition,
-        priority: f64,
-    ) {
-        let request = ReplayRequest::InsertBatch {
-            batch: vec![Insertion {
-                priority,
-                transition,
-            }],
-        };
+    pub fn insert(&mut self, batch: Vec<Insertion>) {
+        let request = ReplayRequest::InsertBatch { batch };
         let stream = match TcpStream::connect("localhost:43430") {
             Ok(stream) => stream,
             Err(e) => {
@@ -47,11 +37,5 @@ impl ReplayRemote {
         };
         bincode::serialize_into(&stream, &request).unwrap();
         bincode::deserialize_from(stream).unwrap()
-    }
-    pub fn save<P: AsRef<Path>>(&self, _path: P) {
-        todo!()
-    }
-    pub fn load<P: AsRef<Path>>(&mut self, _path: P) {
-        todo!()
     }
 }
