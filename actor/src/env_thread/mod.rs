@@ -40,8 +40,8 @@ fn get_params_from_learner() -> Params {
             panic!("Could not connect to replay server: {}", e);
         }
     };
-    bincode::serialize_into(&stream, &request).unwrap();
-    let GetParamsReply { params } = bincode::deserialize_from(stream).unwrap();
+    tcp_io::serialize_into(&stream, &request).unwrap();
+    let GetParamsReply { params } = tcp_io::deserialize_from(stream).unwrap();
     params
 }
 

@@ -10,3 +10,4 @@ packets = { version = "0.1.0", path = "../packets" }
 priority_tree = { version = "0.1.0", path = "../priority_tree" }
 rand = "0.8.5"
 replay_data = { version = "0.1.0", path = "../replay_data" }
+tcp_io = { version = "0.1.0", path = "../tcp_io" }

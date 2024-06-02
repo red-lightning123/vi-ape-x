@@ -15,7 +15,7 @@ impl ReplayClient {
                 panic!("Could not connect to replay server: {}", e);
             }
         };
-        bincode::serialize_into(stream, &request).unwrap();
+        tcp_io::serialize_into(stream, &request).unwrap();
     }
     pub fn insert(&mut self, batch: Vec<Insertion>) {
         let request = ReplayRequest::InsertBatch { batch };
@@ -25,7 +25,7 @@ impl ReplayClient {
                 panic!("Could not connect to replay server: {}", e);
             }
         };
-        bincode::serialize_into(stream, &request).unwrap();
+        tcp_io::serialize_into(stream, &request).unwrap();
     }
     pub fn sample_batch(&self, batch_len: usize) -> SampleBatchResult {
         let request = ReplayRequest::SampleBatch { batch_len };
@@ -35,7 +35,7 @@ impl ReplayClient {
                 panic!("Could not connect to replay server: {}", e);
             }
         };
-        bincode::serialize_into(&stream, &request).unwrap();
-        bincode::deserialize_from(stream).unwrap()
+        tcp_io::serialize_into(&stream, &request).unwrap();
+        tcp_io::deserialize_from(stream).unwrap()
     }
 }

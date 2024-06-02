@@ -38,7 +38,7 @@ fn spawn_param_server_thread(
         let socket = TcpListener::bind("localhost:43431").unwrap();
         loop {
             let (stream, _source_addr) = socket.accept().unwrap();
-            let request = bincode::deserialize_from(&stream).unwrap();
+            let request = tcp_io::deserialize_from(&stream).unwrap();
             match request {
                 LearnerRequest::GetParams => {
                     let params = {
@@ -46,7 +46,7 @@ fn spawn_param_server_thread(
                         agent.params()
                     };
                     let reply = GetParamsReply { params };
-                    bincode::serialize_into(stream, &reply).unwrap();
+                    tcp_io::serialize_into(stream, &reply).unwrap();
                 }
             }
         }

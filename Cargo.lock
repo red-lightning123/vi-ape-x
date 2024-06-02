@@ -20,6 +20,7 @@ dependencies = [
  "replay_wrappers",
  "serde",
  "serde_json",
+ "tcp_io",
  "x11",
  "x11rb",
 ]
@@ -428,6 +429,7 @@ dependencies = [
  "packets",
  "replay_wrappers",
  "serde",
+ "tcp_io",
 ]
 
 [[package]]
@@ -676,11 +678,11 @@ dependencies = [
 name = "replay"
 version = "0.1.0"
 dependencies = [
- "bincode",
  "packets",
  "replay_data",
  "replay_memories",
  "serde",
+ "tcp_io",
 ]
 
 [[package]]
@@ -702,6 +704,7 @@ dependencies = [
  "priority_tree",
  "rand",
  "replay_data",
+ "tcp_io",
 ]
 
 [[package]]
@@ -850,6 +853,15 @@ dependencies = [
  "filetime",
  "libc",
  "xattr",
+]
+
+[[package]]
+name = "tcp_io"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "serde",
+ "zstd 0.13.1",
 ]
 
 [[package]]

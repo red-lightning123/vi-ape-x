@@ -12,7 +12,7 @@ fn main() {
     let mut replay = ReplayRing::with_max_size(REPLAY_MAX_LEN);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();
-        let request = bincode::deserialize_from(&stream).unwrap();
+        let request = tcp_io::deserialize_from(&stream).unwrap();
         match request {
             ReplayRequest::Truncate => {
                 replay.truncate(REPLAY_TRUNCATED_LEN);
@@ -22,7 +22,7 @@ fn main() {
                 if replay.len() < MIN_SAMPLING_REPLAY_SIZE {
                     let err = SampleBatchErrorKind::NotEnoughTransitions;
                     let result: SampleBatchResult = Err(err);
-                    bincode::serialize_into(stream, &result).unwrap();
+                    tcp_io::serialize_into(stream, &result).unwrap();
                 } else {
                     let batch = replay.sample_batch(batch_len);
                     let reply = SampleBatchReplySerializer {
@@ -31,7 +31,7 @@ fn main() {
                         replay_len: replay.len(),
                     };
                     let result: SampleBatchResultSerializer = Ok(reply);
-                    bincode::serialize_into(&stream, &result).unwrap();
+                    tcp_io::serialize_into(&stream, &result).unwrap();
                 }
             }
             ReplayRequest::InsertBatch { batch } => {

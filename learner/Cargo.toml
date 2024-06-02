@@ -10,3 +10,4 @@ model = { version = "0.1.0", path = "../model" }
 packets = { version = "0.1.0", path = "../packets" }
 replay_wrappers = { version = "0.1.0", path = "../replay_wrappers" }
 serde = { version = "1.0.171", features = ["derive"] }
+tcp_io = { version = "0.1.0", path = "../tcp_io" }
