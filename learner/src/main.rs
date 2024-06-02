@@ -35,7 +35,7 @@ fn spawn_param_server_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
-        let socket = TcpListener::bind("localhost:43431").unwrap();
+        let socket = TcpListener::bind(("localhost", ports::LEARNER)).unwrap();
         loop {
             let (stream, _source_addr) = socket.accept().unwrap();
             let request = tcp_io::deserialize_from(&stream).unwrap();

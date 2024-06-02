@@ -9,7 +9,7 @@ impl ReplayClient {
     }
     pub fn update_priorities(&mut self, batch: Vec<PriorityUpdate>) {
         let request = ReplayRequest::UpdateBatchPriorities { batch };
-        let stream = match TcpStream::connect("localhost:43430") {
+        let stream = match TcpStream::connect(("localhost", ports::REPLAY)) {
             Ok(stream) => stream,
             Err(e) => {
                 panic!("Could not connect to replay server: {}", e);
@@ -19,7 +19,7 @@ impl ReplayClient {
     }
     pub fn insert(&mut self, batch: Vec<Insertion>) {
         let request = ReplayRequest::InsertBatch { batch };
-        let stream = match TcpStream::connect("localhost:43430") {
+        let stream = match TcpStream::connect(("localhost", ports::REPLAY)) {
             Ok(stream) => stream,
             Err(e) => {
                 panic!("Could not connect to replay server: {}", e);
@@ -29,7 +29,7 @@ impl ReplayClient {
     }
     pub fn sample_batch(&self, batch_len: usize) -> SampleBatchResult {
         let request = ReplayRequest::SampleBatch { batch_len };
-        let stream = match TcpStream::connect("localhost:43430") {
+        let stream = match TcpStream::connect(("localhost", ports::REPLAY)) {
             Ok(stream) => stream,
             Err(e) => {
                 panic!("Could not connect to replay server: {}", e);

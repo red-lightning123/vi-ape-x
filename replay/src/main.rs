@@ -8,7 +8,7 @@ use std::net::TcpListener;
 fn main() {
     const REPLAY_MAX_LEN: usize = 3_000_000;
     const REPLAY_TRUNCATED_LEN: usize = 2_000_000;
-    let socket = TcpListener::bind("localhost:43430").unwrap();
+    let socket = TcpListener::bind(("localhost", ports::REPLAY)).unwrap();
     let mut replay = ReplayRing::with_max_size(REPLAY_MAX_LEN);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();

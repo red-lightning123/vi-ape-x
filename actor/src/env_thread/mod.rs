@@ -34,7 +34,7 @@ const THREAD_NAME: &str = "env";
 
 fn get_params_from_learner() -> Params {
     let request = LearnerRequest::GetParams;
-    let stream = match TcpStream::connect("localhost:43431") {
+    let stream = match TcpStream::connect(("localhost", ports::LEARNER)) {
         Ok(stream) => stream,
         Err(e) => {
             panic!("Could not connect to learner: {}", e);

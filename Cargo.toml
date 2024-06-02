@@ -9,6 +9,7 @@ members = [
   "model",
   "mono",
   "packets",
+  "ports",
   "priority_tree",
   "replay",
   "replay_data",
