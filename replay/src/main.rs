@@ -3,12 +3,12 @@ mod serializer_hack;
 use packets::{ReplayRequest, SampleBatchErrorKind, SampleBatchResult};
 use replay_memories::ReplayRing;
 use serializer_hack::{SampleBatchReplySerializer, SampleBatchResultSerializer};
-use std::net::TcpListener;
+use std::net::{Ipv4Addr, TcpListener};
 
 fn main() {
     const REPLAY_MAX_LEN: usize = 3_000_000;
     const REPLAY_TRUNCATED_LEN: usize = 2_000_000;
-    let socket = TcpListener::bind(("localhost", ports::REPLAY)).unwrap();
+    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::REPLAY)).unwrap();
     let mut replay = ReplayRing::with_max_size(REPLAY_MAX_LEN);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();

@@ -5,11 +5,9 @@ use model::traits::{ParamFetcher, TargetNet};
 use model::BasicModel;
 use packets::{GetParamsReply, LearnerRequest};
 use replay_wrappers::RemoteReplayWrapper;
-use std::{
-    net::TcpListener,
-    sync::{Arc, RwLock},
-    thread::JoinHandle,
-};
+use std::net::{Ipv4Addr, TcpListener};
+use std::sync::{Arc, RwLock};
+use std::thread::JoinHandle;
 
 fn spawn_batch_learner_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
@@ -35,7 +33,7 @@ fn spawn_param_server_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
-        let socket = TcpListener::bind(("localhost", ports::LEARNER)).unwrap();
+         let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::LEARNER)).unwrap();
         loop {
             let (stream, _source_addr) = socket.accept().unwrap();
             let request = tcp_io::deserialize_from(&stream).unwrap();
