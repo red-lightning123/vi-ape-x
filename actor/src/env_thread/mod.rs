@@ -1,6 +1,6 @@
 mod actor_schedule;
 mod env;
-mod learner_client;
+mod param_updater_thread;
 mod plot_datum_sender;
 mod state_accums;
 
@@ -12,16 +12,17 @@ use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
-use learner_client::LearnerClient;
-use model::traits::{Actor, ParamFetcher, Persistable, TargetNet};
+use model::traits::{Actor, Persistable, TargetNet};
 use model::BasicModel;
 use packets::ActorSettings;
+use param_updater_thread::{spawn_param_updater_thread, ParamUpdaterThreadMessage};
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
+use std::sync::{Arc, RwLock};
 
 type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
@@ -35,12 +36,12 @@ const THREAD_NAME: &str = "env";
 
 fn step(
     env: &mut ConcreteEnv,
-    agent: &mut RemoteReplayWrapper<BasicModel>,
-    learner_client: &LearnerClient,
+    agent: &Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
     schedule: &mut ActorSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
     plot_datum_sender: &PlotDatumSender,
+    param_updater_thread_sender: &Sender<ParamUpdaterThreadMessage>,
 ) -> bool {
     let state = env.state();
     let concated_state = State::concat_frames(&(&state).into());
@@ -53,6 +54,7 @@ fn step(
     let action = if rand::thread_rng().gen::<f64>() < schedule.eps() {
         random_action()
     } else {
+        let agent = agent.read().unwrap();
         agent.best_action(&state)
     };
     // the env thread needs to handle hold requests carefully
@@ -74,11 +76,13 @@ fn step(
         if let Some(score) = episode_score {
             plot_datum_sender.send_episode_score(score, schedule);
         }
+        let mut agent = agent.write().unwrap();
         agent.remember(transition);
     }
     if schedule.is_time_to_update_params() {
-        let params = learner_client.get_params();
-        agent.set_params(params);
+        param_updater_thread_sender
+            .send(ParamUpdaterThreadMessage::UpdateParams)
+            .unwrap();
     }
     schedule.step();
     should_hold
@@ -131,11 +135,18 @@ pub fn spawn_env_thread(
     std::thread::spawn(move || {
         const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
         const ALPHA: f64 = 0.6;
+        let agent =
+            RemoteReplayWrapper::wrap(BasicModel::new(), settings.replay_server_addr, ALPHA);
+        let agent = Arc::new(RwLock::new(agent));
+        let (param_updater_thread_sender, param_updater_thread_receiver) =
+            crossbeam_channel::unbounded::<ParamUpdaterThreadMessage>();
+        let param_updater_thread = spawn_param_updater_thread(
+            param_updater_thread_receiver,
+            Arc::clone(&agent),
+            &settings,
+        );
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let mut schedule = ActorSchedule::new(settings.eps, PARAM_UPDATE_INTERVAL_STEPS);
-        let mut agent =
-            RemoteReplayWrapper::wrap(BasicModel::new(), settings.replay_server_addr, ALPHA);
-        let learner_client = LearnerClient::new(settings.learner_addr);
         let mut mode = ThreadMode::Held;
         loop {
             match mode {
@@ -143,14 +154,20 @@ pub fn spawn_env_thread(
                     EnvThreadMessage::Master(message) => match message {
                         MasterMessage::Save(path) => {
                             schedule.save(path.as_path());
-                            agent.save(path);
+                            {
+                                let agent = agent.read().unwrap();
+                                agent.save(path);
+                            }
                             master_thread_sender
                                 .send(MasterThreadMessage::Done(THREAD_ID))
                                 .unwrap();
                         }
                         MasterMessage::Load(path) => {
                             schedule.load(path.as_path());
-                            agent.load(path);
+                            {
+                                let mut agent = agent.write().unwrap();
+                                agent.load(path);
+                            }
                             master_thread_sender
                                 .send(MasterThreadMessage::Done(THREAD_ID))
                                 .unwrap();
@@ -183,12 +200,12 @@ pub fn spawn_env_thread(
                 ThreadMode::Running(ref mut env) => {
                     let should_hold = step(
                         env,
-                        &mut agent,
-                        &learner_client,
+                        &agent,
                         &mut schedule,
                         &master_thread_sender,
                         &ui_thread_sender,
                         &plot_datum_sender,
+                        &param_updater_thread_sender,
                     );
                     if should_hold {
                         mode = ThreadMode::Held;
@@ -197,5 +214,9 @@ pub fn spawn_env_thread(
                 }
             }
         }
+        param_updater_thread_sender
+            .send(ParamUpdaterThreadMessage::Stop)
+            .unwrap();
+        param_updater_thread.join().unwrap();
     })
 }
