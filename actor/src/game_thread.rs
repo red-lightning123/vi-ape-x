@@ -50,7 +50,10 @@ const THREAD_NAME: &str = "game";
 
 fn wait_for_hold_message(receiver: &Receiver<GameThreadMessage>) {
     loop {
-        if let GameThreadMessage::Master(MasterMessage::Hold) = receiver.recv().unwrap() {
+        if matches!(
+            receiver.recv().unwrap(),
+            GameThreadMessage::Master(MasterMessage::Hold)
+        ) {
             return;
         }
     }

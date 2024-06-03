@@ -89,7 +89,10 @@ fn step(
 
 fn wait_for_hold_message(receiver: &Receiver<EnvThreadMessage>) {
     loop {
-        if let EnvThreadMessage::Master(MasterMessage::Hold) = receiver.recv().unwrap() {
+        if matches!(
+            receiver.recv().unwrap(),
+            EnvThreadMessage::Master(MasterMessage::Hold)
+        ) {
             return;
         }
     }

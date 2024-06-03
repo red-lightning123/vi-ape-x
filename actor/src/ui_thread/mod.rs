@@ -12,7 +12,10 @@ use spawn_gl_ui_thread::spawn_gl_ui_thread;
 
 fn wait_for_hold_message(receiver: &Receiver<UiThreadMessage>) {
     loop {
-        if let UiThreadMessage::Master(MasterMessage::Hold) = receiver.recv().unwrap() {
+        if matches!(
+            receiver.recv().unwrap(),
+            UiThreadMessage::Master(MasterMessage::Hold)
+        ) {
             return;
         }
     }
