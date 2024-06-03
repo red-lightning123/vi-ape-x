@@ -78,25 +78,6 @@ pub fn spawn_gl_ui_thread(
                         _ => panic!("{THREAD_NAME} thread: bad message"),
                     };
                     while human_interface.poll_event().is_some() {}
-                    // the following code is kept as a future reference
-                    // for handling input event from the ui window
-                    /*
-                    use crate::keycodes;
-                    while let Some(event) = human_interface.poll_event() {
-                        match event {
-                            x11rb::protocol::Event::KeyPress(key_press_event) => {
-                                if key_press_event.detail == keycodes::KEYCODE_ESC {
-                                    master_thread_sender.send(MasterThreadMessage::ShouldSaveAndClose).unwrap();
-                                }
-                            }
-                            x11rb::protocol::Event::KeyRelease(_) => {
-                            }
-                            _ => {
-                                println!("unknown event type received");
-                            }
-                        }
-                    }
-                    */
                 }
             }
         }
