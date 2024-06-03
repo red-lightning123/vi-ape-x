@@ -21,6 +21,7 @@ replay_wrappers = { version = "0.1.0", path = "../replay_wrappers" }
 file_io = { version = "0.1.0", path = "../file_io" }
 tcp_io = { version = "0.1.0", path = "../tcp_io" }
 ports = { version = "0.1.0", path = "../ports" }
+prompt = { version = "0.1.0", path = "../prompt" }
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
 jemallocator = "0.3.2"

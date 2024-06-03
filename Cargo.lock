@@ -16,6 +16,7 @@ dependencies = [
  "model",
  "packets",
  "ports",
+ "prompt",
  "rand",
  "replay_data",
  "replay_wrappers",
@@ -429,6 +430,7 @@ dependencies = [
  "model",
  "packets",
  "ports",
+ "prompt",
  "replay_wrappers",
  "serde",
  "tcp_io",
@@ -625,6 +627,10 @@ checksum = "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
 dependencies = [
  "unicode-ident",
 ]
+
+[[package]]
+name = "prompt"
+version = "0.1.0"
 
 [[package]]
 name = "protobuf"

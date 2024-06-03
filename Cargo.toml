@@ -11,6 +11,7 @@ members = [
   "packets",
   "ports",
   "priority_tree",
+  "prompt",
   "replay",
   "replay_data",
   "replay_memories",
