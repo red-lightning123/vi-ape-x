@@ -708,7 +708,6 @@ dependencies = [
  "bincode",
  "file_io",
  "packets",
- "ports",
  "priority_tree",
  "rand",
  "replay_data",

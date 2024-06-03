@@ -1,5 +1,6 @@
 mod actor_schedule;
 mod env;
+mod learner_client;
 mod plot_datum_sender;
 mod state_accums;
 
@@ -11,16 +12,16 @@ use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
 use image::ImageOwned2;
+use learner_client::LearnerClient;
 use model::traits::{Actor, ParamFetcher, Persistable, TargetNet};
-use model::{BasicModel, Params};
-use packets::{GetParamsReply, LearnerRequest};
+use model::BasicModel;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
-use std::net::TcpStream;
+use std::net::Ipv4Addr;
 
 type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
@@ -32,22 +33,10 @@ fn random_action() -> u8 {
 const THREAD_ID: ThreadId = ThreadId::Env;
 const THREAD_NAME: &str = "env";
 
-fn get_params_from_learner() -> Params {
-    let request = LearnerRequest::GetParams;
-    let stream = match TcpStream::connect(("localhost", ports::LEARNER)) {
-        Ok(stream) => stream,
-        Err(e) => {
-            panic!("Could not connect to learner: {}", e);
-        }
-    };
-    tcp_io::serialize_into(&stream, &request).unwrap();
-    let GetParamsReply { params } = tcp_io::deserialize_from(stream).unwrap();
-    params
-}
-
 fn step(
     env: &mut ConcreteEnv,
     agent: &mut RemoteReplayWrapper<BasicModel>,
+    learner_client: &LearnerClient,
     schedule: &mut ActorSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
@@ -88,7 +77,7 @@ fn step(
         agent.remember(transition);
     }
     if schedule.is_time_to_update_params() {
-        let params = get_params_from_learner();
+        let params = learner_client.get_params();
         agent.set_params(params);
     }
     schedule.step();
@@ -141,7 +130,12 @@ pub fn spawn_env_thread(
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let eps = rand::thread_rng().gen();
         let mut schedule = ActorSchedule::new(eps, PARAM_UPDATE_INTERVAL_STEPS);
-        let mut agent = RemoteReplayWrapper::wrap(BasicModel::new(), ALPHA);
+        let mut agent = RemoteReplayWrapper::wrap(
+            BasicModel::new(),
+            (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
+            ALPHA,
+        );
+        let learner_client = LearnerClient::new((Ipv4Addr::LOCALHOST, ports::LEARNER).into());
         let mut mode = ThreadMode::Held;
         loop {
             match mode {
@@ -190,6 +184,7 @@ pub fn spawn_env_thread(
                     let should_hold = step(
                         env,
                         &mut agent,
+                        &learner_client,
                         &mut schedule,
                         &master_thread_sender,
                         &ui_thread_sender,

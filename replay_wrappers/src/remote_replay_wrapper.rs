@@ -4,6 +4,7 @@ use packets::{PriorityUpdate, SampleBatchErrorKind, SampleBatchReply, SampleBatc
 use replay_data::CompressedTransition;
 use replay_memories::ReplayRemote;
 use std::fs;
+use std::net::SocketAddr;
 use std::path::Path;
 
 pub struct RemoteReplayWrapper<T> {
@@ -13,10 +14,10 @@ pub struct RemoteReplayWrapper<T> {
 }
 
 impl<T> RemoteReplayWrapper<T> {
-    pub fn wrap(model: T, alpha: f64) -> Self {
+    pub fn wrap(model: T, replay_server_addr: SocketAddr, alpha: f64) -> Self {
         Self {
             model,
-            memory: ReplayRemote::new(),
+            memory: ReplayRemote::new(replay_server_addr),
             alpha,
         }
     }

@@ -4,6 +4,7 @@ use packets::{Insertion, PriorityUpdate, SampleBatchResult};
 use replay_client::ReplayClient;
 use replay_data::CompressedTransition;
 use std::mem;
+use std::net::SocketAddr;
 use std::path::Path;
 
 pub struct ReplayRemote {
@@ -12,10 +13,10 @@ pub struct ReplayRemote {
 }
 
 impl ReplayRemote {
-    pub fn new() -> Self {
+    pub fn new(replay_server_addr: SocketAddr) -> Self {
         Self {
             insertion_batch: vec![],
-            client: ReplayClient::new(),
+            client: ReplayClient::new(replay_server_addr),
         }
     }
     pub fn update_priorities(&mut self, batch: Vec<PriorityUpdate>) {

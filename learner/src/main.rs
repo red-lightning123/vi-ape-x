@@ -33,7 +33,7 @@ fn spawn_param_server_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
-         let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::LEARNER)).unwrap();
+        let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::LEARNER)).unwrap();
         loop {
             let (stream, _source_addr) = socket.accept().unwrap();
             let request = tcp_io::deserialize_from(&stream).unwrap();
@@ -55,6 +55,7 @@ fn main() {
     const ALPHA: f64 = 0.6;
     let agent = Arc::new(RwLock::new(RemoteReplayWrapper::wrap(
         BasicModel::new(),
+        (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
         ALPHA,
     )));
     let batch_learner_thread = spawn_batch_learner_thread(Arc::clone(&agent));
