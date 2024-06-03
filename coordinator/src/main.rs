@@ -5,9 +5,22 @@ use packets::{
 use std::net::{Ipv4Addr, TcpListener};
 
 enum Client {
-    Actor,
+    Actor { id: usize },
     Learner,
     Replay,
+}
+
+// Eps is computed according to the Ape-X paper
+fn compute_eps(actor_id: usize, actor_count: usize) -> f64 {
+    const EPS_BASE: f64 = 0.4;
+    const ALPHA: f64 = 7.0;
+    match actor_count {
+        0 => unreachable!(),
+        // The actual formula is undefined for a single actor. We arbitrarily
+        // set it to EPS_BASE
+        1 => EPS_BASE,
+        _ => EPS_BASE.powf(1.0 + (actor_id as f64 * ALPHA) / (actor_count as f64 - 1.0)),
+    }
 }
 
 fn main() {
@@ -15,6 +28,7 @@ fn main() {
     let mut clients = vec![];
     let mut learner_addr = None;
     let mut replay_server_addr = None;
+    let mut actor_id = 0;
 
     loop {
         let (stream, source_addr) = socket.accept().unwrap();
@@ -22,7 +36,8 @@ fn main() {
         let request = tcp_io::deserialize_from(&stream).unwrap();
         match request {
             CoordinatorRequest::ActorConn => {
-                clients.push((stream, Client::Actor));
+                clients.push((stream, Client::Actor { id: actor_id }));
+                actor_id += 1;
             }
             CoordinatorRequest::LearnerConn { service_port } => {
                 if learner_addr.is_some() {
@@ -42,6 +57,8 @@ fn main() {
         }
     }
 
+    let actor_count = actor_id + 1;
+
     let learner_addr = match learner_addr {
         Some(addr) => addr,
         None => {
@@ -60,11 +77,11 @@ fn main() {
 
     for (stream, client) in clients {
         match client {
-            Client::Actor => {
+            Client::Actor { id } => {
                 let settings = ActorSettings {
                     replay_server_addr,
                     learner_addr,
-                    eps: 0.01,
+                    eps: compute_eps(id, actor_count),
                 };
                 let reply = ActorConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
