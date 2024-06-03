@@ -3,7 +3,7 @@ use std::net::Ipv4Addr;
 pub fn prompt_user_for_service_ip_addr(service_name: &str) -> Ipv4Addr {
     loop {
         println!(
-            "enter the {}'s IPv4 address (keep blank for {}):",
+            "enter {} IPv4 address (keep blank for {}):",
             service_name,
             Ipv4Addr::LOCALHOST
         );
