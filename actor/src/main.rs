@@ -1,5 +1,4 @@
 #![allow(dead_code, unused_imports)]
-mod actor_settings;
 mod env_thread;
 mod game;
 mod game_interface;
@@ -11,7 +10,7 @@ mod plot_thread;
 mod ui_thread;
 mod x11_utils;
 
-use actor_settings::ActorSettings;
+use coordinator_client::CoordinatorClient;
 use env_thread::{spawn_env_thread, EnvThreadMessage};
 use game::Game;
 use game_interface::{GameInterface, GameKey, KeyEventKind};
@@ -19,7 +18,7 @@ use game_thread::{spawn_game_thread, GameThreadMessage};
 use human_interface::HumanInterface;
 use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, ThreadId};
 use plot_thread::{spawn_plot_thread, PlotThreadMessage, PlotType};
-use prompt::{prompt_user_for_eps, prompt_user_for_service_ip_addr};
+use prompt::prompt_user_for_service_ip_addr;
 use ui_thread::{spawn_ui_thread, UiThreadMessage};
 use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};
 
@@ -56,17 +55,11 @@ use jemallocator::Jemalloc;
 static GLOBAL: Jemalloc = Jemalloc;
 
 fn main() {
-    let learner_ip_addr = prompt_user_for_service_ip_addr("learner");
-    println!("learner ip addr set to {}...", learner_ip_addr);
-    let replay_server_ip_addr = prompt_user_for_service_ip_addr("replay server");
-    println!("replay server ip addr set to {}...", replay_server_ip_addr);
-    let eps = prompt_user_for_eps();
-    println!("epsilon set to {}...", eps);
-    let actor_settings = ActorSettings {
-        learner_addr: (learner_ip_addr, ports::LEARNER).into(),
-        replay_server_addr: (replay_server_ip_addr, ports::REPLAY).into(),
-        eps,
-    };
-    let master_thread = spawn_master_thread(actor_settings);
+    let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
+    println!("coordinator ip addr set to {}...", coordinator_ip_addr);
+    let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
+    let coordinator_client = CoordinatorClient::new(coordinator_addr);
+    let settings = coordinator_client.actor_conn();
+    let master_thread = spawn_master_thread(settings);
     master_thread.join().unwrap();
 }

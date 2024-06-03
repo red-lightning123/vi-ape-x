@@ -1,4 +1,7 @@
-use packets::{ActorConnReply, CoordinatorRequest, LearnerConnReply, ReplayConnReply};
+use packets::{
+    ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
+    ReplayConnReply, ReplaySettings,
+};
 use std::net::{SocketAddr, TcpStream};
 
 pub struct CoordinatorClient {
@@ -9,7 +12,7 @@ impl CoordinatorClient {
     pub fn new(server_addr: SocketAddr) -> Self {
         Self { server_addr }
     }
-    pub fn actor_conn(&self) -> ActorConnReply {
+    pub fn actor_conn(&self) -> ActorSettings {
         let request = CoordinatorRequest::ActorConn;
         let stream = match TcpStream::connect(self.server_addr) {
             Ok(stream) => stream,
@@ -18,9 +21,10 @@ impl CoordinatorClient {
             }
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
-        tcp_io::deserialize_from(stream).unwrap()
+        let ActorConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
+        settings
     }
-    pub fn learner_conn(&self) -> LearnerConnReply {
+    pub fn learner_conn(&self) -> LearnerSettings {
         let request = CoordinatorRequest::LearnerConn;
         let stream = match TcpStream::connect(self.server_addr) {
             Ok(stream) => stream,
@@ -29,9 +33,10 @@ impl CoordinatorClient {
             }
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
-        tcp_io::deserialize_from(stream).unwrap()
+        let LearnerConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
+        settings
     }
-    pub fn replay_conn(&self) -> ReplayConnReply {
+    pub fn replay_conn(&self) -> ReplaySettings {
         let request = CoordinatorRequest::ReplayConn;
         let stream = match TcpStream::connect(self.server_addr) {
             Ok(stream) => stream,
@@ -40,6 +45,7 @@ impl CoordinatorClient {
             }
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
-        tcp_io::deserialize_from(stream).unwrap()
+        let ReplayConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
+        settings
     }
 }

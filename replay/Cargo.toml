@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+coordinator_client = { version = "0.1.0", path = "../coordinator_client" }
 packets = { version = "0.1.0", path = "../packets" }
 ports = { version = "0.1.0", path = "../ports" }
+prompt = { version = "0.1.0", path = "../prompt" }
 replay_data = { version = "0.1.0", path = "../replay_data" }
 replay_memories = { version = "0.1.0", path = "../replay_memories" }
 serde = { version = "1.0.171", features = ["derive"] }

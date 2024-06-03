@@ -1,12 +1,13 @@
 mod learner_schedule;
 
+use coordinator_client::CoordinatorClient;
 use learner_schedule::LearnerSchedule;
 use model::traits::{ParamFetcher, TargetNet};
 use model::BasicModel;
-use packets::{GetParamsReply, LearnerRequest};
+use packets::{GetParamsReply, LearnerRequest, LearnerSettings};
 use prompt::prompt_user_for_service_ip_addr;
 use replay_wrappers::RemoteReplayWrapper;
-use std::net::{Ipv4Addr, SocketAddr, TcpListener};
+use std::net::{Ipv4Addr, TcpListener};
 use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 
@@ -53,17 +54,19 @@ fn spawn_param_server_thread(
 }
 
 fn main() {
-    let replay_server_ip_addr = prompt_user_for_service_ip_addr("replay server");
-    println!("replay server ip addr set to {}...", replay_server_ip_addr);
-    let replay_server_addr = (replay_server_ip_addr, ports::REPLAY).into();
-    run(replay_server_addr);
+    let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
+    println!("coordinator ip addr set to {}...", coordinator_ip_addr);
+    let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
+    let coordinator_client = CoordinatorClient::new(coordinator_addr);
+    let settings = coordinator_client.learner_conn();
+    run(settings);
 }
 
-fn run(replay_server_addr: SocketAddr) {
+fn run(settings: LearnerSettings) {
     const ALPHA: f64 = 0.6;
     let agent = Arc::new(RwLock::new(RemoteReplayWrapper::wrap(
         BasicModel::new(),
-        replay_server_addr,
+        settings.replay_server_addr,
         ALPHA,
     )));
     let batch_learner_thread = spawn_batch_learner_thread(Arc::clone(&agent));

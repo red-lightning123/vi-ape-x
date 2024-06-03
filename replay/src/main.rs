@@ -1,11 +1,22 @@
 mod serializer_hack;
 
-use packets::{ReplayRequest, SampleBatchErrorKind, SampleBatchResult};
+use coordinator_client::CoordinatorClient;
+use packets::{ReplayRequest, ReplaySettings, SampleBatchErrorKind, SampleBatchResult};
+use prompt::prompt_user_for_service_ip_addr;
 use replay_memories::ReplayRing;
 use serializer_hack::{SampleBatchReplySerializer, SampleBatchResultSerializer};
 use std::net::{Ipv4Addr, TcpListener};
 
 fn main() {
+    let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
+    println!("coordinator ip addr set to {}...", coordinator_ip_addr);
+    let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
+    let coordinator_client = CoordinatorClient::new(coordinator_addr);
+    let settings = coordinator_client.replay_conn();
+    run(settings);
+}
+
+fn run(_settings: ReplaySettings) {
     const REPLAY_MAX_LEN: usize = 3_000_000;
     const REPLAY_TRUNCATED_LEN: usize = 2_000_000;
     let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::REPLAY)).unwrap();

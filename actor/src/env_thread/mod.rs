@@ -4,7 +4,6 @@ mod learner_client;
 mod plot_datum_sender;
 mod state_accums;
 
-use crate::ActorSettings;
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
@@ -16,6 +15,7 @@ use image::ImageOwned2;
 use learner_client::LearnerClient;
 use model::traits::{Actor, ParamFetcher, Persistable, TargetNet};
 use model::BasicModel;
+use packets::ActorSettings;
 use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;

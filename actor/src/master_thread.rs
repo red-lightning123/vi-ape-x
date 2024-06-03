@@ -1,7 +1,7 @@
-use crate::ActorSettings;
 use crate::{spawn_env_thread, spawn_game_thread, spawn_plot_thread, spawn_ui_thread};
 use crate::{EnvThreadMessage, GameThreadMessage, PlotThreadMessage, UiThreadMessage};
 use crossbeam_channel::{Receiver, Sender};
+use packets::ActorSettings;
 use std::fs;
 use std::path::PathBuf;
 use std::thread::JoinHandle;

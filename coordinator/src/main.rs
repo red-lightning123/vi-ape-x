@@ -1,4 +1,7 @@
-use packets::{ActorConnReply, CoordinatorRequest, LearnerConnReply, ReplayConnReply};
+use packets::{
+    ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
+    ReplayConnReply, ReplaySettings,
+};
 use std::net::{Ipv4Addr, TcpListener};
 
 fn main() {
@@ -9,21 +12,24 @@ fn main() {
         let request = tcp_io::deserialize_from(&stream).unwrap();
         match request {
             CoordinatorRequest::ActorConn => {
-                let reply = ActorConnReply {
+                let settings = ActorSettings {
                     replay_server_addr: (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
                     learner_addr: (Ipv4Addr::LOCALHOST, ports::LEARNER).into(),
                     eps: 0.01,
                 };
+                let reply = ActorConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
             CoordinatorRequest::LearnerConn => {
-                let reply = LearnerConnReply {
+                let settings = LearnerSettings {
                     replay_server_addr: (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
                 };
+                let reply = LearnerConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
             CoordinatorRequest::ReplayConn => {
-                let reply = ReplayConnReply;
+                let settings = ReplaySettings;
+                let reply = ReplayConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
         }

@@ -11,19 +11,34 @@ pub enum CoordinatorRequest {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ActorConnReply {
+pub struct ActorSettings {
     pub learner_addr: SocketAddr,
     pub replay_server_addr: SocketAddr,
     pub eps: f64,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct LearnerConnReply {
+pub struct ActorConnReply {
+    pub settings: ActorSettings,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LearnerSettings {
     pub replay_server_addr: SocketAddr,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ReplayConnReply;
+pub struct LearnerConnReply {
+    pub settings: LearnerSettings,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ReplaySettings;
+
+#[derive(Serialize, Deserialize)]
+pub struct ReplayConnReply {
+    pub settings: ReplaySettings,
+}
 
 #[derive(Serialize, Deserialize)]
 pub enum LearnerRequest {
