@@ -1,6 +1,29 @@
 use model::Params;
 use replay_data::CompressedTransition;
 use serde::{Deserialize, Serialize};
+use std::net::SocketAddr;
+
+#[derive(Serialize, Deserialize)]
+pub enum CoordinatorRequest {
+    ActorConn,
+    LearnerConn,
+    ReplayConn,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ActorConnReply {
+    pub learner_addr: SocketAddr,
+    pub replay_server_addr: SocketAddr,
+    pub eps: f64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LearnerConnReply {
+    pub replay_server_addr: SocketAddr,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ReplayConnReply {}
 
 #[derive(Serialize, Deserialize)]
 pub enum LearnerRequest {
