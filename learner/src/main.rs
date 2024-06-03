@@ -5,7 +5,7 @@ use model::traits::{ParamFetcher, TargetNet};
 use model::BasicModel;
 use packets::{GetParamsReply, LearnerRequest};
 use replay_wrappers::RemoteReplayWrapper;
-use std::net::{Ipv4Addr, TcpListener};
+use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 
@@ -52,10 +52,38 @@ fn spawn_param_server_thread(
 }
 
 fn main() {
+    let replay_server_ip_addr = get_replay_server_ip_addr_from_user();
+    println!("replay server ip addr set to {}...", replay_server_ip_addr);
+    let replay_server_addr = (replay_server_ip_addr, ports::REPLAY).into();
+    run(replay_server_addr);
+}
+
+fn get_replay_server_ip_addr_from_user() -> Ipv4Addr {
+    loop {
+        println!(
+            "enter the replay server's IPv4 address (keep blank for {}):",
+            Ipv4Addr::LOCALHOST
+        );
+        let mut prompt = String::new();
+        std::io::stdin().read_line(&mut prompt).unwrap();
+        let prompt = prompt.trim();
+        if prompt.is_empty() {
+            return Ipv4Addr::LOCALHOST;
+        }
+        match prompt.parse() {
+            Ok(ip_addr) => {
+                return ip_addr;
+            }
+            Err(e) => println!("could not parse ip addr: {}", e),
+        }
+    }
+}
+
+fn run(replay_server_addr: SocketAddr) {
     const ALPHA: f64 = 0.6;
     let agent = Arc::new(RwLock::new(RemoteReplayWrapper::wrap(
         BasicModel::new(),
-        (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
+        replay_server_addr,
         ALPHA,
     )));
     let batch_learner_thread = spawn_batch_learner_thread(Arc::clone(&agent));
