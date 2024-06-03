@@ -54,34 +54,40 @@ fn main() {
                 clients.push((stream, Client::Actor { id: actor_id }));
                 actor_id += 1;
             }
-            CoordinatorRequest::LearnerConn { service_port } => {
+            CoordinatorRequest::LearnerConn { service_addr } => {
                 set_term_color(&mut stdout, Color::Ansi256(51));
-                println!("learner connected from {}", source_addr);
+                println!(
+                    "learner connected from {}, serving at {}",
+                    source_addr, service_addr
+                );
                 set_term_color(&mut stdout, Color::Green);
                 if learner_addr.is_some() {
                     set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
-                        "rejecting learner at {}. another learner is already connected",
+                        "rejecting learner connection from {}. another learner is already connected",
                         source_addr
                     );
                     continue;
                 }
-                learner_addr = Some((source_addr.ip(), service_port).into());
+                learner_addr = Some(service_addr);
                 clients.push((stream, Client::Learner));
             }
-            CoordinatorRequest::ReplayConn { service_port } => {
+            CoordinatorRequest::ReplayConn { service_addr } => {
                 set_term_color(&mut stdout, Color::Ansi256(46));
-                println!("replay server connected from {}", source_addr);
+                println!(
+                    "replay server connected from {}, serving at {}",
+                    source_addr, service_addr
+                );
                 set_term_color(&mut stdout, Color::Green);
                 if replay_server_addr.is_some() {
                     set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
-                        "rejecting replay server at {}. another replay server is already connected",
+                        "rejecting replay server connection from {}. another replay server is already connected",
                         source_addr
                     );
                     continue;
                 }
-                replay_server_addr = Some((source_addr.ip(), service_port).into());
+                replay_server_addr = Some(service_addr);
                 clients.push((stream, Client::Replay));
             }
             CoordinatorRequest::Start => break,

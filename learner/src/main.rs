@@ -2,6 +2,7 @@ mod learner_schedule;
 
 use coordinator_client::CoordinatorClient;
 use learner_schedule::LearnerSchedule;
+use local_ip_address::local_ip;
 use model::traits::{ParamFetcher, TargetNet};
 use model::BasicModel;
 use packets::{GetParamsReply, LearnerRequest, LearnerSettings};
@@ -70,7 +71,9 @@ fn main() {
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
-    let settings = coordinator_client.learner_conn(ports::LEARNER);
+    let local_ip_addr = local_ip().unwrap();
+    let local_addr = (local_ip_addr, ports::LEARNER).into();
+    let settings = coordinator_client.learner_conn(local_addr);
     run(settings);
 }
 

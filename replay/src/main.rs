@@ -1,6 +1,7 @@
 mod serializer_hack;
 
 use coordinator_client::CoordinatorClient;
+use local_ip_address::local_ip;
 use packets::{ReplayRequest, ReplaySettings, SampleBatchErrorKind, SampleBatchResult};
 use prompt::prompt_user_for_service_ip_addr;
 use replay_memories::ReplayRing;
@@ -12,7 +13,9 @@ fn main() {
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
-    let settings = coordinator_client.replay_conn(ports::REPLAY);
+    let local_ip_addr = local_ip().unwrap();
+    let local_addr = (local_ip_addr, ports::REPLAY).into();
+    let settings = coordinator_client.replay_conn(local_addr);
     run(settings);
 }
 

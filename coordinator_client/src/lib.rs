@@ -24,8 +24,8 @@ impl CoordinatorClient {
         let ActorConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
         settings
     }
-    pub fn learner_conn(&self, service_port: u16) -> LearnerSettings {
-        let request = CoordinatorRequest::LearnerConn { service_port };
+    pub fn learner_conn(&self, service_addr: SocketAddr) -> LearnerSettings {
+        let request = CoordinatorRequest::LearnerConn { service_addr };
         let stream = match TcpStream::connect(self.server_addr) {
             Ok(stream) => stream,
             Err(e) => {
@@ -36,8 +36,8 @@ impl CoordinatorClient {
         let LearnerConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
         settings
     }
-    pub fn replay_conn(&self, service_port: u16) -> ReplaySettings {
-        let request = CoordinatorRequest::ReplayConn { service_port };
+    pub fn replay_conn(&self, service_addr: SocketAddr) -> ReplaySettings {
+        let request = CoordinatorRequest::ReplayConn { service_addr };
         let stream = match TcpStream::connect(self.server_addr) {
             Ok(stream) => stream,
             Err(e) => {
