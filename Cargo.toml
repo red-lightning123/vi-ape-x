@@ -4,6 +4,7 @@ resolver = "2"
 members = [
   "actor",
   "coordinator",
+  "coordinator_client",
   "file_io",
   "image",
   "learner",

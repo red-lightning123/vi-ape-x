@@ -161,6 +161,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "coordinator_client"
+version = "0.1.0"
+dependencies = [
+ "packets",
+ "tcp_io",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
