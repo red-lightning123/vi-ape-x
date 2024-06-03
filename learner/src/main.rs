@@ -53,7 +53,19 @@ fn spawn_param_server_thread(
     })
 }
 
+fn enable_tf_memory_growth() {
+    std::env::set_var("TF_FORCE_GPU_ALLOW_GROWTH", "true");
+}
+
 fn main() {
+    // By default, tensorflow preallocates nearly all of the GPU memory
+    // available. This behavior becomes a problem when multiple programs are
+    // using it simultaneously, such as in a distributed reinforcement learning
+    // agent, since it can easily result in GPU OOM. Fortunately, tensorflow has
+    // an option to dynamically grow its allocated gpu memory, so we enable it
+    // to circumvent the memory issue
+    enable_tf_memory_growth();
+
     let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
