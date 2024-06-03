@@ -24,18 +24,18 @@ fn main() {
             CoordinatorRequest::ActorConn => {
                 clients.push((stream, Client::Actor));
             }
-            CoordinatorRequest::LearnerConn => {
+            CoordinatorRequest::LearnerConn { service_port } => {
                 if learner_addr.is_some() {
                     continue;
                 }
-                learner_addr = Some((source_addr.ip(), ports::LEARNER).into());
+                learner_addr = Some((source_addr.ip(), service_port).into());
                 clients.push((stream, Client::Learner));
             }
-            CoordinatorRequest::ReplayConn => {
+            CoordinatorRequest::ReplayConn { service_port } => {
                 if replay_server_addr.is_some() {
                     continue;
                 }
-                replay_server_addr = Some((source_addr.ip(), ports::REPLAY).into());
+                replay_server_addr = Some((source_addr.ip(), service_port).into());
                 clients.push((stream, Client::Replay));
             }
             CoordinatorRequest::Start => break,

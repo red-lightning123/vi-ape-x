@@ -58,7 +58,7 @@ fn main() {
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
-    let settings = coordinator_client.learner_conn();
+    let settings = coordinator_client.learner_conn(ports::LEARNER);
     run(settings);
 }
 

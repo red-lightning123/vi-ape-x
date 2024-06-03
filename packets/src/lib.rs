@@ -6,8 +6,8 @@ use std::net::SocketAddr;
 #[derive(Serialize, Deserialize)]
 pub enum CoordinatorRequest {
     ActorConn,
-    LearnerConn,
-    ReplayConn,
+    LearnerConn { service_port: u16 },
+    ReplayConn { service_port: u16 },
     Start,
 }
 
