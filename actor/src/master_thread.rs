@@ -1,3 +1,4 @@
+use crate::ActorSettings;
 use crate::{spawn_env_thread, spawn_game_thread, spawn_plot_thread, spawn_ui_thread};
 use crate::{EnvThreadMessage, GameThreadMessage, PlotThreadMessage, UiThreadMessage};
 use crossbeam_channel::{Receiver, Sender};
@@ -141,7 +142,7 @@ fn close(
     env_thread.join().unwrap();
 }
 
-pub fn spawn_master_thread() -> JoinHandle<()> {
+pub fn spawn_master_thread(settings: ActorSettings) -> JoinHandle<()> {
     std::thread::spawn(move || {
         const THREAD_NAME: &str = "master";
         let (sender, receiver) = crossbeam_channel::unbounded::<MasterThreadMessage>();
@@ -175,6 +176,7 @@ pub fn spawn_master_thread() -> JoinHandle<()> {
             ui_thread_sender,
             game_thread_sender,
             plot_thread_sender,
+            settings,
         );
 
         loop {

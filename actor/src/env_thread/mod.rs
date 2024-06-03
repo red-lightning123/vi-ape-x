@@ -4,6 +4,7 @@ mod learner_client;
 mod plot_datum_sender;
 mod state_accums;
 
+use crate::ActorSettings;
 use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
@@ -21,7 +22,6 @@ use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
-use std::net::Ipv4Addr;
 
 type Accum = PipeFilterToAccum<CompressFilter, FrameStack<<CompressFilter as Filter>::Output>>;
 type ConcreteEnv = Env<Accum>;
@@ -126,6 +126,7 @@ pub fn spawn_env_thread(
     ui_thread_sender: Sender<UiThreadMessage>,
     game_thread_sender: Sender<GameThreadMessage>,
     plot_thread_sender: Sender<PlotThreadMessage>,
+    settings: ActorSettings,
 ) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
         const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
@@ -133,12 +134,9 @@ pub fn spawn_env_thread(
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
         let eps = rand::thread_rng().gen();
         let mut schedule = ActorSchedule::new(eps, PARAM_UPDATE_INTERVAL_STEPS);
-        let mut agent = RemoteReplayWrapper::wrap(
-            BasicModel::new(),
-            (Ipv4Addr::LOCALHOST, ports::REPLAY).into(),
-            ALPHA,
-        );
-        let learner_client = LearnerClient::new((Ipv4Addr::LOCALHOST, ports::LEARNER).into());
+        let mut agent =
+            RemoteReplayWrapper::wrap(BasicModel::new(), settings.replay_server_addr, ALPHA);
+        let learner_client = LearnerClient::new(settings.learner_addr);
         let mut mode = ThreadMode::Held;
         loop {
             match mode {

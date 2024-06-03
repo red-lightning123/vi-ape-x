@@ -1,4 +1,5 @@
 #![allow(dead_code, unused_imports)]
+mod actor_settings;
 mod env_thread;
 mod game;
 mod game_interface;
@@ -10,6 +11,7 @@ mod plot_thread;
 mod ui_thread;
 mod x11_utils;
 
+use actor_settings::ActorSettings;
 use env_thread::{spawn_env_thread, EnvThreadMessage};
 use game::Game;
 use game_interface::{GameInterface, GameKey, KeyEventKind};
@@ -17,6 +19,7 @@ use game_thread::{spawn_game_thread, GameThreadMessage};
 use human_interface::HumanInterface;
 use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, ThreadId};
 use plot_thread::{spawn_plot_thread, PlotThreadMessage, PlotType};
+use std::net::Ipv4Addr;
 use ui_thread::{spawn_ui_thread, UiThreadMessage};
 use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};
 
@@ -53,6 +56,36 @@ use jemallocator::Jemalloc;
 static GLOBAL: Jemalloc = Jemalloc;
 
 fn main() {
-    let master_thread = spawn_master_thread();
+    let learner_ip_addr = get_service_ip_addr_from_user("learner");
+    println!("learner ip addr set to {}...", learner_ip_addr);
+    let replay_server_ip_addr = get_service_ip_addr_from_user("replay server");
+    println!("replay server ip addr set to {}...", replay_server_ip_addr);
+    let actor_settings = ActorSettings {
+        learner_addr: (learner_ip_addr, ports::LEARNER).into(),
+        replay_server_addr: (replay_server_ip_addr, ports::REPLAY).into(),
+    };
+    let master_thread = spawn_master_thread(actor_settings);
     master_thread.join().unwrap();
+}
+
+fn get_service_ip_addr_from_user(service_name: &str) -> Ipv4Addr {
+    loop {
+        println!(
+            "enter the {}'s IPv4 address (keep blank for {}):",
+            service_name,
+            Ipv4Addr::LOCALHOST
+        );
+        let mut prompt = String::new();
+        std::io::stdin().read_line(&mut prompt).unwrap();
+        let prompt = prompt.trim();
+        if prompt.is_empty() {
+            return Ipv4Addr::LOCALHOST;
+        }
+        match prompt.parse() {
+            Ok(ip_addr) => {
+                return ip_addr;
+            }
+            Err(e) => println!("could not parse ip addr: {}", e),
+        }
+    }
 }
