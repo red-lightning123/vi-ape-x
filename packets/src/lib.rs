@@ -8,6 +8,7 @@ pub enum CoordinatorRequest {
     ActorConn,
     LearnerConn,
     ReplayConn,
+    Start,
 }
 
 #[derive(Serialize, Deserialize)]
