@@ -2,7 +2,9 @@ use packets::{
     ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
     ReplayConnReply, ReplaySettings,
 };
+use std::io::Write;
 use std::net::{Ipv4Addr, TcpListener};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 enum Client {
     Actor { id: usize },
@@ -23,6 +25,16 @@ fn compute_eps(actor_id: usize, actor_count: usize) -> f64 {
     }
 }
 
+fn set_term_color(stream: &mut StandardStream, color: Color) {
+    stream
+        .set_color(ColorSpec::new().set_bold(true).set_fg(Some(color)))
+        .unwrap();
+}
+
+fn reset_term_color(stream: &mut StandardStream) {
+    stream.reset().unwrap();
+}
+
 fn main() {
     let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::COORDINATOR)).unwrap();
     let mut clients = vec![];
@@ -30,18 +42,24 @@ fn main() {
     let mut replay_server_addr = None;
     let mut actor_id = 0;
 
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
     loop {
         let (stream, source_addr) = socket.accept().unwrap();
         let request = tcp_io::deserialize_from(&stream).unwrap();
         match request {
             CoordinatorRequest::ActorConn => {
-                println!("actor connected from {}", source_addr);
+                set_term_color(&mut stdout, Color::Ansi256(202));
+                writeln!(&mut stdout, "actor connected from {}", source_addr).unwrap();
                 clients.push((stream, Client::Actor { id: actor_id }));
                 actor_id += 1;
             }
             CoordinatorRequest::LearnerConn { service_port } => {
+                set_term_color(&mut stdout, Color::Ansi256(51));
                 println!("learner connected from {}", source_addr);
+                set_term_color(&mut stdout, Color::Green);
                 if learner_addr.is_some() {
+                    set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
                         "rejecting learner at {}. another learner is already connected",
                         source_addr
@@ -52,8 +70,11 @@ fn main() {
                 clients.push((stream, Client::Learner));
             }
             CoordinatorRequest::ReplayConn { service_port } => {
+                set_term_color(&mut stdout, Color::Ansi256(46));
                 println!("replay server connected from {}", source_addr);
+                set_term_color(&mut stdout, Color::Green);
                 if replay_server_addr.is_some() {
+                    set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
                         "rejecting replay server at {}. another replay server is already connected",
                         source_addr
@@ -72,7 +93,9 @@ fn main() {
     let learner_addr = match learner_addr {
         Some(addr) => addr,
         None => {
+            set_term_color(&mut stdout, Color::Red);
             println!("attempted to start but no learner connected. aborting...");
+            reset_term_color(&mut stdout);
             return;
         }
     };
@@ -80,7 +103,9 @@ fn main() {
     let replay_server_addr = match replay_server_addr {
         Some(addr) => addr,
         None => {
+            set_term_color(&mut stdout, Color::Red);
             println!("attempted to start but no replay server connected. aborting...");
+            reset_term_color(&mut stdout);
             return;
         }
     };
@@ -108,4 +133,5 @@ fn main() {
             }
         }
     }
+    reset_term_color(&mut stdout);
 }
