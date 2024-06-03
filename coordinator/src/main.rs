@@ -32,22 +32,32 @@ fn main() {
 
     loop {
         let (stream, source_addr) = socket.accept().unwrap();
-        println!("connection from {}", source_addr);
         let request = tcp_io::deserialize_from(&stream).unwrap();
         match request {
             CoordinatorRequest::ActorConn => {
+                println!("actor connected from {}", source_addr);
                 clients.push((stream, Client::Actor { id: actor_id }));
                 actor_id += 1;
             }
             CoordinatorRequest::LearnerConn { service_port } => {
+                println!("learner connected from {}", source_addr);
                 if learner_addr.is_some() {
+                    println!(
+                        "rejecting learner at {}. another learner is already connected",
+                        source_addr
+                    );
                     continue;
                 }
                 learner_addr = Some((source_addr.ip(), service_port).into());
                 clients.push((stream, Client::Learner));
             }
             CoordinatorRequest::ReplayConn { service_port } => {
+                println!("replay server connected from {}", source_addr);
                 if replay_server_addr.is_some() {
+                    println!(
+                        "rejecting replay server at {}. another replay server is already connected",
+                        source_addr
+                    );
                     continue;
                 }
                 replay_server_addr = Some((source_addr.ip(), service_port).into());
