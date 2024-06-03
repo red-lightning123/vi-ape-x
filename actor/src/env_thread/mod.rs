@@ -132,8 +132,7 @@ pub fn spawn_env_thread(
         const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
         const ALPHA: f64 = 0.6;
         let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
-        let eps = rand::thread_rng().gen();
-        let mut schedule = ActorSchedule::new(eps, PARAM_UPDATE_INTERVAL_STEPS);
+        let mut schedule = ActorSchedule::new(settings.eps, PARAM_UPDATE_INTERVAL_STEPS);
         let mut agent =
             RemoteReplayWrapper::wrap(BasicModel::new(), settings.replay_server_addr, ALPHA);
         let learner_client = LearnerClient::new(settings.learner_addr);
