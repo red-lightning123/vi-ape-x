@@ -23,7 +23,7 @@ pub struct LearnerConnReply {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ReplayConnReply {}
+pub struct ReplayConnReply;
 
 #[derive(Serialize, Deserialize)]
 pub enum LearnerRequest {
