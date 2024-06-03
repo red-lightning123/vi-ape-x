@@ -1,0 +1,9 @@
+[package]
+name = "start"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+coordinator_client = { version = "0.1.0", path = "../coordinator_client" }
+ports = { version = "0.1.0", path = "../ports" }
+prompt = { version = "0.1.0", path = "../prompt" }

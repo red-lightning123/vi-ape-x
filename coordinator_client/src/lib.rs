@@ -48,4 +48,14 @@ impl CoordinatorClient {
         let ReplayConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
         settings
     }
+    pub fn start(&self) {
+        let request = CoordinatorRequest::Start;
+        let stream = match TcpStream::connect(self.server_addr) {
+            Ok(stream) => stream,
+            Err(e) => {
+                panic!("Could not connect to coordinator: {}", e);
+            }
+        };
+        tcp_io::serialize_into(&stream, &request).unwrap();
+    }
 }

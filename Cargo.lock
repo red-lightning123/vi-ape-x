@@ -851,6 +851,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "start"
+version = "0.1.0"
+dependencies = [
+ "coordinator_client",
+ "ports",
+ "prompt",
+]
+
+[[package]]
 name = "subtle"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

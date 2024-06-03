@@ -18,5 +18,6 @@ members = [
   "replay_data",
   "replay_memories",
   "replay_wrappers",
+  "start",
   "tcp_io",
 ]
