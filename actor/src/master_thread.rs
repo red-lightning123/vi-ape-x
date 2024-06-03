@@ -179,6 +179,8 @@ pub fn spawn_master_thread(settings: ActorSettings) -> JoinHandle<()> {
             settings,
         );
 
+        resume(&master_sender, &mut mode);
+
         loop {
             let mut command = String::new();
             std::io::stdin().read_line(&mut command).unwrap();
