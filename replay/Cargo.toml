@@ -13,3 +13,6 @@ replay_data = { version = "0.1.0", path = "../replay_data" }
 replay_memories = { version = "0.1.0", path = "../replay_memories" }
 serde = { version = "1.0.171", features = ["derive"] }
 tcp_io = { version = "0.1.0", path = "../tcp_io" }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.3.2"

@@ -15,3 +15,6 @@ prompt = { version = "0.1.0", path = "../prompt" }
 replay_wrappers = { version = "0.1.0", path = "../replay_wrappers" }
 serde = { version = "1.0.171", features = ["derive"] }
 tcp_io = { version = "0.1.0", path = "../tcp_io" }
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.3.2"

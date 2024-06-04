@@ -453,6 +453,7 @@ dependencies = [
  "bincode",
  "coordinator_client",
  "file_io",
+ "jemallocator",
  "local-ip-address",
  "model",
  "packets",
@@ -755,6 +756,7 @@ name = "replay"
 version = "0.1.0"
 dependencies = [
  "coordinator_client",
+ "jemallocator",
  "local-ip-address",
  "packets",
  "ports",
