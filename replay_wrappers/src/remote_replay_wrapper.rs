@@ -84,7 +84,18 @@ impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
         match self.memory.sample_batch(BATCH_SIZE) {
             SampleBatchResult::Ok(reply) => Some(self.train_on_sampled_batch(reply, beta)),
             SampleBatchResult::Err(err) => match err {
-                SampleBatchErrorKind::NotEnoughTransitions => None,
+                SampleBatchErrorKind::NotEnoughTransitions => {
+                    // When there aren't enough transitions to sample a batch,
+                    // the model has nothing to predict, which means that
+                    // training steps are extremely fast. Since sample requests
+                    // are transmitted over TCP, repeated sample requests at
+                    // such a high rate may actually cause the machine to run
+                    // out of ephemeral ports, resulting in connection errors.
+                    // Therefore, we simulate a slight delay to avoid
+                    // overwhelming the machine with requests
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    None
+                }
             },
         }
     }
