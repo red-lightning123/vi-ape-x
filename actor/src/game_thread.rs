@@ -1,9 +1,11 @@
 use crate::game_interface::{GameKey, KeyEventKind};
+use crate::master_thread::ThreadType;
 use crate::Game;
 use crate::{EnvThreadMessage, MasterMessage, MasterThreadMessage, ThreadId, UiThreadMessage};
 use crossbeam_channel::{Receiver, Sender};
 use image::{Color2, Color4};
 use image::{ImageOwned, ImageOwned2, ImageRef, ImageRef4};
+use std::thread::JoinHandle;
 
 enum ThreadMode {
     Running(std::time::Instant),
@@ -59,86 +61,97 @@ fn wait_for_hold_message(receiver: &Receiver<GameThreadMessage>) {
     }
 }
 
-pub fn spawn_game_thread(
-    receiver: Receiver<GameThreadMessage>,
-    master_thread_sender: Sender<MasterThreadMessage>,
-    ui_thread_sender: Sender<UiThreadMessage>,
-    env_thread_sender: Sender<EnvThreadMessage>,
-) -> std::thread::JoinHandle<()> {
-    std::thread::spawn(move || {
-        let mut mode = ThreadMode::Held;
-        let mut game = Game::new();
-        loop {
-            match mode {
-                ThreadMode::Held => match receiver.recv().unwrap() {
-                    GameThreadMessage::Master(message) => match message {
-                        MasterMessage::Save(_) => {
-                            master_thread_sender
-                                .send(MasterThreadMessage::Done(THREAD_ID))
-                                .unwrap();
-                        }
-                        MasterMessage::Load(_) => {
-                            master_thread_sender
-                                .send(MasterThreadMessage::Done(THREAD_ID))
-                                .unwrap();
-                        }
-                        message @ (MasterMessage::Hold | MasterMessage::PrepareHold) => {
-                            eprintln!("{THREAD_NAME} thread: {:?} while already held", message);
-                        }
-                        MasterMessage::Resume => {
-                            game.start();
-                            let win = game.interface().win().clone();
-                            ui_thread_sender
-                                .send(UiThreadMessage::WinDims(win))
-                                .unwrap();
-                            let current_start_time = std::time::Instant::now();
-                            mode = ThreadMode::Running(current_start_time);
-                        }
-                        MasterMessage::Close => {
-                            break;
-                        }
-                    },
-                    _ => panic!("{THREAD_NAME} thread: bad message"),
-                },
-                ThreadMode::Running(ref mut current_start_time) => {
-                    game.next_frame();
-                    let preprocessed_frame = preprocess_frame(&game.get_current_frame());
-                    let score = game.get_current_score();
-                    env_thread_sender
-                        .send(EnvThreadMessage::Frame((preprocessed_frame, score)))
-                        .unwrap();
+pub struct GameThread {}
 
-                    match receiver.recv().unwrap() {
-                        GameThreadMessage::Action(action) => {
-                            send_action_events(action, &mut game);
-                            let next_start_time =
-                                *current_start_time + std::time::Duration::from_millis(100);
-                            let now = std::time::Instant::now();
-                            std::thread::sleep(next_start_time - now);
-                        }
-                        GameThreadMessage::Truncation => {
-                            game.end();
-                            game.start();
-                        }
+impl ThreadType for GameThread {
+    type Message = GameThreadMessage;
+    type SpawnArgs = (
+        Sender<MasterThreadMessage>,
+        Sender<UiThreadMessage>,
+        Sender<EnvThreadMessage>,
+    );
+
+    fn spawn(receiver: Receiver<GameThreadMessage>, args: Self::SpawnArgs) -> JoinHandle<()> {
+        std::thread::spawn(move || {
+            let (master_thread_sender, ui_thread_sender, env_thread_sender) = args;
+            let mut mode = ThreadMode::Held;
+            let mut game = Game::new();
+            loop {
+                match mode {
+                    ThreadMode::Held => match receiver.recv().unwrap() {
                         GameThreadMessage::Master(message) => match message {
-                            MasterMessage::PrepareHold => {
-                                game.end();
-                                mode = ThreadMode::Held;
+                            MasterMessage::Save(_) => {
                                 master_thread_sender
                                     .send(MasterThreadMessage::Done(THREAD_ID))
                                     .unwrap();
-                                wait_for_hold_message(&receiver);
-                                continue;
                             }
-                            _ => panic!("{THREAD_NAME} thread: bad message"),
+                            MasterMessage::Load(_) => {
+                                master_thread_sender
+                                    .send(MasterThreadMessage::Done(THREAD_ID))
+                                    .unwrap();
+                            }
+                            message @ (MasterMessage::Hold | MasterMessage::PrepareHold) => {
+                                eprintln!("{THREAD_NAME} thread: {:?} while already held", message);
+                            }
+                            MasterMessage::Resume => {
+                                game.start();
+                                let win = game.interface().win().clone();
+                                ui_thread_sender
+                                    .send(UiThreadMessage::WinDims(win))
+                                    .unwrap();
+                                let current_start_time = std::time::Instant::now();
+                                mode = ThreadMode::Running(current_start_time);
+                            }
+                            MasterMessage::Close => {
+                                break;
+                            }
                         },
-                    };
-                    *current_start_time = std::time::Instant::now();
+                        _ => panic!("{THREAD_NAME} thread: bad message"),
+                    },
+                    ThreadMode::Running(ref mut current_start_time) => {
+                        game.next_frame();
+                        let preprocessed_frame = preprocess_frame(&game.get_current_frame());
+                        let score = game.get_current_score();
+                        env_thread_sender
+                            .send(EnvThreadMessage::Frame((preprocessed_frame, score)))
+                            .unwrap();
+
+                        match receiver.recv().unwrap() {
+                            GameThreadMessage::Action(action) => {
+                                send_action_events(action, &mut game);
+                                let next_start_time =
+                                    *current_start_time + std::time::Duration::from_millis(100);
+                                let now = std::time::Instant::now();
+                                std::thread::sleep(next_start_time - now);
+                            }
+                            GameThreadMessage::Truncation => {
+                                game.end();
+                                game.start();
+                            }
+                            GameThreadMessage::Master(message) => match message {
+                                MasterMessage::PrepareHold => {
+                                    game.end();
+                                    mode = ThreadMode::Held;
+                                    master_thread_sender
+                                        .send(MasterThreadMessage::Done(THREAD_ID))
+                                        .unwrap();
+                                    wait_for_hold_message(&receiver);
+                                    continue;
+                                }
+                                _ => panic!("{THREAD_NAME} thread: bad message"),
+                            },
+                        };
+                        *current_start_time = std::time::Instant::now();
+                    }
                 }
             }
-        }
-        game.terminate();
-    })
+            game.terminate();
+        })
+    }
+
+    fn master_message(msg: MasterMessage) -> Self::Message {
+        Self::Message::Master(msg)
+    }
 }
 
 fn send_action_events(action: u8, game: &mut Game) {
