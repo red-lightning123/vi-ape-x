@@ -22,6 +22,10 @@ impl<T> RemoteReplayWrapper<T> {
         }
     }
 
+    pub fn truncate_memory(&mut self) {
+        self.memory.truncate()
+    }
+
     fn convert_abs_td_error_to_priority(&self, abs_td_error: f64) -> f64 {
         const EPSILON: f64 = 0.001;
         (abs_td_error + EPSILON).powf(self.alpha)

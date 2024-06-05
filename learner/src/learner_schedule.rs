@@ -6,13 +6,15 @@ use std::path::Path;
 pub struct LearnerSchedule {
     n_step: u32,
     target_update_interval_steps: u32,
+    truncate_memory_interval_steps: u32,
 }
 
 impl LearnerSchedule {
-    pub fn new(target_update_interval_steps: u32) -> Self {
+    pub fn new(target_update_interval_steps: u32, truncate_memory_interval_steps: u32) -> Self {
         Self {
             n_step: 0,
             target_update_interval_steps,
+            truncate_memory_interval_steps,
         }
     }
     pub fn n_step(&self) -> u32 {
@@ -23,6 +25,9 @@ impl LearnerSchedule {
     }
     pub fn is_time_to_update_target(&self) -> bool {
         self.n_step % self.target_update_interval_steps == 0
+    }
+    pub fn is_time_to_truncate_memory(&self) -> bool {
+        self.n_step % self.truncate_memory_interval_steps == 0
     }
     pub fn save<P: AsRef<Path>>(&self, path: P) {
         let file = create_file_buf_write(path.as_ref().join("schedule")).unwrap();

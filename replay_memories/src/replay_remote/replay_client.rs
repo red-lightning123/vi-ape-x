@@ -9,6 +9,16 @@ impl ReplayClient {
     pub fn new(server_addr: SocketAddr) -> Self {
         Self { server_addr }
     }
+    pub fn truncate(&mut self) {
+        let request = ReplayRequest::Truncate;
+        let stream = match TcpStream::connect(self.server_addr) {
+            Ok(stream) => stream,
+            Err(e) => {
+                panic!("Could not connect to replay server: {}", e);
+            }
+        };
+        tcp_io::serialize_into(stream, &request).unwrap();
+    }
     pub fn update_priorities(&mut self, batch: Vec<PriorityUpdate>) {
         let request = ReplayRequest::UpdateBatchPriorities { batch };
         let stream = match TcpStream::connect(self.server_addr) {

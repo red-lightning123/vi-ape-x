@@ -19,6 +19,9 @@ impl ReplayRemote {
             client: ReplayClient::new(replay_server_addr),
         }
     }
+    pub fn truncate(&mut self) {
+        self.client.truncate()
+    }
     pub fn update_priorities(&mut self, batch: Vec<PriorityUpdate>) {
         self.client.update_priorities(batch)
     }

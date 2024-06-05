@@ -17,12 +17,17 @@ fn spawn_batch_learner_thread(
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
         const TARGET_UPDATE_INTERVAL_STEPS: u32 = 2_500;
+        const TRUNCATE_MEMORY_INTERVAL_STEPS: u32 = 100;
         const BETA: f64 = 0.4;
-        let mut schedule = LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS);
+        let mut schedule =
+            LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS, TRUNCATE_MEMORY_INTERVAL_STEPS);
         loop {
             {
                 let mut agent = agent.write().unwrap();
                 agent.train_step(BETA);
+                if schedule.is_time_to_truncate_memory() {
+                    agent.truncate_memory();
+                }
                 if schedule.is_time_to_update_target() {
                     agent.copy_control_to_target();
                 }
