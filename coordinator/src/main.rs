@@ -134,7 +134,10 @@ fn main() {
             }
             Client::Replay => {
                 let settings = ReplaySettings;
-                let reply = ReplayConnReply { settings };
+                let reply = ReplayConnReply {
+                    settings,
+                    _size_marker: u8::default(),
+                };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
         }

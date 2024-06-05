@@ -45,7 +45,10 @@ impl CoordinatorClient {
             }
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
-        let ReplayConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
+        let ReplayConnReply {
+            settings,
+            _size_marker,
+        } = tcp_io::deserialize_from(stream).unwrap();
         settings
     }
     pub fn start(&self) {
