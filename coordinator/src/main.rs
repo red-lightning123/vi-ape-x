@@ -62,7 +62,6 @@ fn main() {
                     "learner connected from {}, serving at {}",
                     source_addr, service_addr
                 );
-                set_term_color(&mut stdout, Color::Green);
                 if learner_addr.is_some() {
                     set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
@@ -80,7 +79,6 @@ fn main() {
                     "replay server connected from {}, serving at {}",
                     source_addr, service_addr
                 );
-                set_term_color(&mut stdout, Color::Green);
                 if replay_server_addr.is_some() {
                     set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
@@ -98,7 +96,6 @@ fn main() {
                     "plot server connected from {}, serving at {}",
                     source_addr, service_addr
                 );
-                set_term_color(&mut stdout, Color::Green);
                 if plot_server_addr.is_some() {
                     set_term_color(&mut stdout, Color::Ansi256(210));
                     println!(
