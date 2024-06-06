@@ -16,6 +16,7 @@ dependencies = [
  "libc",
  "model",
  "packets",
+ "plot_remote",
  "ports",
  "prompt",
  "rand",

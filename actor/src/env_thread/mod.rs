@@ -1,3 +1,4 @@
+mod actor_plot_remote;
 mod actor_schedule;
 mod env;
 mod param_updater_thread;
@@ -9,6 +10,7 @@ use crate::{
     GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
     UiThreadMessage,
 };
+use actor_plot_remote::ActorPlotRemote;
 use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
 use env::{Env, StepError};
@@ -43,6 +45,7 @@ fn step(
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
     plot_datum_sender: &PlotDatumSender,
+    plot_remote: &mut Option<ActorPlotRemote>,
     param_updater_thread_sender: &Sender<ParamUpdaterThreadMessage>,
 ) -> bool {
     let state = env.state();
@@ -76,7 +79,9 @@ fn step(
     };
     while let Some((transition, episode_score)) = env.pop_transition() {
         if let Some(score) = episode_score {
-            plot_datum_sender.send_episode_score(score, schedule);
+            if let Some(ref mut plot_remote) = plot_remote {
+                plot_remote.send(score);
+            }
         }
         let mut agent = agent.write().unwrap();
         agent.remember(transition);
@@ -161,6 +166,9 @@ impl ThreadType for EnvThread {
             );
             let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
             let mut schedule = ActorSchedule::new(settings.eps, PARAM_UPDATE_INTERVAL_STEPS);
+            let mut plot_remote = settings
+                .plot_server_addr
+                .map(|addr| ActorPlotRemote::new(addr, settings.id, 10));
             let mut mode = ThreadMode::Held;
             loop {
                 match mode {
@@ -219,6 +227,7 @@ impl ThreadType for EnvThread {
                             &master_thread_sender,
                             &ui_thread_sender,
                             &plot_datum_sender,
+                            &mut plot_remote,
                             &param_updater_thread_sender,
                         );
                         if should_hold {

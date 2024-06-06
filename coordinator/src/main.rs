@@ -139,6 +139,8 @@ fn main() {
                 let settings = ActorSettings {
                     replay_server_addr,
                     learner_addr,
+                    plot_server_addr,
+                    id,
                     eps: compute_eps(id, actor_count),
                 };
                 let reply = ActorConnReply { settings };
