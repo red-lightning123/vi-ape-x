@@ -1,6 +1,8 @@
+mod learner_plot_remote;
 mod learner_schedule;
 
 use coordinator_client::CoordinatorClient;
+use learner_plot_remote::LearnerPlotRemote;
 use learner_schedule::LearnerSchedule;
 use local_ip_address::local_ip;
 use model::traits::{ParamFetcher, TargetNet};
@@ -8,12 +10,13 @@ use model::BasicModel;
 use packets::{GetParamsReply, LearnerRequest, LearnerSettings};
 use prompt::prompt_user_for_service_ip_addr;
 use replay_wrappers::RemoteReplayWrapper;
-use std::net::{Ipv4Addr, TcpListener};
+use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 
 fn spawn_batch_learner_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
+    plot_server_addr: Option<SocketAddr>,
 ) -> JoinHandle<()> {
     std::thread::spawn(move || {
         const TARGET_UPDATE_INTERVAL_STEPS: u32 = 2_500;
@@ -21,10 +24,15 @@ fn spawn_batch_learner_thread(
         const BETA: f64 = 0.4;
         let mut schedule =
             LearnerSchedule::new(TARGET_UPDATE_INTERVAL_STEPS, TRUNCATE_MEMORY_INTERVAL_STEPS);
+        let mut plot_remote = plot_server_addr.map(|addr| LearnerPlotRemote::new(addr, 100));
         loop {
             {
                 let mut agent = agent.write().unwrap();
-                agent.train_step(BETA);
+                if let Some(step_info) = agent.train_step(BETA) {
+                    if let Some(ref mut plot_remote) = plot_remote {
+                        plot_remote.send(step_info);
+                    }
+                }
                 if schedule.is_time_to_truncate_memory() {
                     agent.truncate_memory();
                 }
@@ -121,7 +129,8 @@ fn run(settings: LearnerSettings) {
         settings.replay_server_addr,
         ALPHA,
     )));
-    let batch_learner_thread = spawn_batch_learner_thread(Arc::clone(&agent));
+    let batch_learner_thread =
+        spawn_batch_learner_thread(Arc::clone(&agent), settings.plot_server_addr);
     let param_server_thread = spawn_param_server_thread(agent);
     batch_learner_thread.join().unwrap();
     param_server_thread.join().unwrap();

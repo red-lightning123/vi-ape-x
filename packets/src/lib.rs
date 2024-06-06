@@ -8,6 +8,7 @@ pub enum CoordinatorRequest {
     ActorConn,
     LearnerConn { service_addr: SocketAddr },
     ReplayConn { service_addr: SocketAddr },
+    PlotConn { service_addr: SocketAddr },
     Start,
 }
 
@@ -26,6 +27,7 @@ pub struct ActorConnReply {
 #[derive(Serialize, Deserialize)]
 pub struct LearnerSettings {
     pub replay_server_addr: SocketAddr,
+    pub plot_server_addr: Option<SocketAddr>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -41,6 +43,21 @@ pub struct ReplayConnReply {
     pub settings: ReplaySettings,
     // The _size_marker member forces the serialized packet to have nonzero
     // size. ReplaySettings, the type of the settings member, is currently
+    // a unit struct, so without _size_marker the packet may serialize to
+    // nothing. We want to avoid such zero-sized packets because a deserializer
+    // would have no way to tell whether they were actually transmitted through
+    // its stream (as they don't occupy any bytes)
+    pub _size_marker: u8,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PlotSettings;
+
+#[derive(Serialize, Deserialize)]
+pub struct PlotConnReply {
+    pub settings: PlotSettings,
+    // The _size_marker member forces the serialized packet to have nonzero
+    // size. PlotSettings, the type of the settings member, is currently
     // a unit struct, so without _size_marker the packet may serialize to
     // nothing. We want to avoid such zero-sized packets because a deserializer
     // would have no way to tell whether they were actually transmitted through
@@ -91,3 +108,20 @@ pub enum SampleBatchErrorKind {
 }
 
 pub type SampleBatchResult = Result<SampleBatchReply, SampleBatchErrorKind>;
+
+#[derive(Serialize, Deserialize, Copy, Clone)]
+pub enum LearnerPlotKind {
+    QVal,
+    Loss,
+}
+
+#[derive(Serialize, Deserialize, Copy, Clone)]
+pub enum PlotKind {
+    Learner(LearnerPlotKind),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PlotRequest {
+    pub kind: PlotKind,
+    pub batch: Vec<(f64, f64)>,
+}

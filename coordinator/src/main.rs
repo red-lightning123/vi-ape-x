@@ -1,6 +1,6 @@
 use packets::{
     ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
-    ReplayConnReply, ReplaySettings,
+    PlotConnReply, PlotSettings, ReplayConnReply, ReplaySettings,
 };
 use std::io::Write;
 use std::net::{Ipv4Addr, TcpListener};
@@ -10,6 +10,7 @@ enum Client {
     Actor { id: usize },
     Learner,
     Replay,
+    Plot,
 }
 
 // Eps is computed according to the Ape-X paper
@@ -40,6 +41,7 @@ fn main() {
     let mut clients = vec![];
     let mut learner_addr = None;
     let mut replay_server_addr = None;
+    let mut plot_server_addr = None;
     let mut actor_id = 0;
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
@@ -90,6 +92,24 @@ fn main() {
                 replay_server_addr = Some(service_addr);
                 clients.push((stream, Client::Replay));
             }
+            CoordinatorRequest::PlotConn { service_addr } => {
+                set_term_color(&mut stdout, Color::Ansi256(201));
+                println!(
+                    "plot server connected from {}, serving at {}",
+                    source_addr, service_addr
+                );
+                set_term_color(&mut stdout, Color::Green);
+                if plot_server_addr.is_some() {
+                    set_term_color(&mut stdout, Color::Ansi256(210));
+                    println!(
+                        "rejecting plot server connection from {}. another plot server is already connected",
+                        source_addr
+                    );
+                    continue;
+                }
+                plot_server_addr = Some(service_addr);
+                clients.push((stream, Client::Plot));
+            }
             CoordinatorRequest::Start => break,
         }
     }
@@ -128,13 +148,24 @@ fn main() {
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
             Client::Learner => {
-                let settings = LearnerSettings { replay_server_addr };
+                let settings = LearnerSettings {
+                    replay_server_addr,
+                    plot_server_addr,
+                };
                 let reply = LearnerConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
             Client::Replay => {
                 let settings = ReplaySettings;
                 let reply = ReplayConnReply {
+                    settings,
+                    _size_marker: u8::default(),
+                };
+                tcp_io::serialize_into(stream, &reply).unwrap();
+            }
+            Client::Plot => {
+                let settings = PlotSettings;
+                let reply = PlotConnReply {
                     settings,
                     _size_marker: u8::default(),
                 };

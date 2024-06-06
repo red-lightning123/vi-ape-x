@@ -1,0 +1,8 @@
+[package]
+name = "plot_remote"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+packets = { version = "0.1.0", path = "../packets" }
+tcp_io = { version = "0.1.0", path = "../tcp_io" }
