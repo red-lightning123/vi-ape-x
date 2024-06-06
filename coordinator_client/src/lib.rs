@@ -1,6 +1,6 @@
 use packets::{
     ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
-    ReplayConnReply, ReplaySettings,
+    PlotConnReply, PlotSettings, ReplayConnReply, ReplaySettings,
 };
 use std::net::{SocketAddr, TcpStream};
 
@@ -46,6 +46,21 @@ impl CoordinatorClient {
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
         let ReplayConnReply {
+            settings,
+            _size_marker,
+        } = tcp_io::deserialize_from(stream).unwrap();
+        settings
+    }
+    pub fn plot_conn(&self, service_addr: SocketAddr) -> PlotSettings {
+        let request = CoordinatorRequest::PlotConn { service_addr };
+        let stream = match TcpStream::connect(self.server_addr) {
+            Ok(stream) => stream,
+            Err(e) => {
+                panic!("Could not connect to coordinator: {}", e);
+            }
+        };
+        tcp_io::serialize_into(&stream, &request).unwrap();
+        let PlotConnReply {
             settings,
             _size_marker,
         } = tcp_io::deserialize_from(stream).unwrap();

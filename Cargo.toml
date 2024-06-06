@@ -11,6 +11,7 @@ members = [
   "model",
   "mono",
   "packets",
+  "plot",
   "plot_remote",
   "ports",
   "priority_tree",

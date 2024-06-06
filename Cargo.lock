@@ -668,6 +668,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
+name = "plot"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "coordinator_client",
+ "file_io",
+ "jemallocator",
+ "local-ip-address",
+ "packets",
+ "ports",
+ "prompt",
+ "serde",
+ "serde_json",
+ "tcp_io",
+]
+
+[[package]]
 name = "plot_remote"
 version = "0.1.0"
 dependencies = [
