@@ -50,9 +50,9 @@ fn main() {
     run(settings);
 }
 
-fn run(_settings: PlotSettings) {
+fn run(settings: PlotSettings) {
     let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::PLOT)).unwrap();
-    let mut plot_set = PlotSet::new("progress");
+    let mut plot_set = PlotSet::new("progress", settings.actor_count);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();
         let request = tcp_io::deserialize_from(&stream).unwrap();

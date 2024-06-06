@@ -60,10 +60,7 @@ impl CoordinatorClient {
             }
         };
         tcp_io::serialize_into(&stream, &request).unwrap();
-        let PlotConnReply {
-            settings,
-            _size_marker,
-        } = tcp_io::deserialize_from(stream).unwrap();
+        let PlotConnReply { settings } = tcp_io::deserialize_from(stream).unwrap();
         settings
     }
     pub fn start(&self) {

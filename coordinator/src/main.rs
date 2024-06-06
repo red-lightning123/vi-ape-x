@@ -161,11 +161,8 @@ fn main() {
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
             Client::Plot => {
-                let settings = PlotSettings;
-                let reply = PlotConnReply {
-                    settings,
-                    _size_marker: u8::default(),
-                };
+                let settings = PlotSettings { actor_count };
+                let reply = PlotConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
             }
         }
