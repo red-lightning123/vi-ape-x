@@ -6,7 +6,6 @@ mod game_thread;
 mod human_interface;
 mod keycodes;
 mod master_thread;
-mod plot_thread;
 mod ui_thread;
 mod x11_utils;
 
@@ -17,7 +16,6 @@ use game_interface::{GameInterface, GameKey, KeyEventKind};
 use game_thread::{GameThread, GameThreadMessage};
 use human_interface::HumanInterface;
 use master_thread::{spawn_master_thread, MasterMessage, MasterThreadMessage, ThreadId};
-use plot_thread::{PlotThread, PlotThreadMessage, PlotType};
 use prompt::prompt_user_for_service_ip_addr;
 use ui_thread::{UiThread, UiThreadMessage};
 use x11_utils::{choose_matching_fbconfigs, GlxContext, Window, X11Display};

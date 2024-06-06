@@ -2,14 +2,10 @@ mod actor_plot_remote;
 mod actor_schedule;
 mod env;
 mod param_updater_thread;
-mod plot_datum_sender;
 mod state_accums;
 
 use crate::master_thread::ThreadType;
-use crate::{
-    GameThreadMessage, MasterMessage, MasterThreadMessage, PlotThreadMessage, ThreadId,
-    UiThreadMessage,
-};
+use crate::{GameThreadMessage, MasterMessage, MasterThreadMessage, ThreadId, UiThreadMessage};
 use actor_plot_remote::ActorPlotRemote;
 use actor_schedule::ActorSchedule;
 use crossbeam_channel::{Receiver, Sender};
@@ -19,7 +15,6 @@ use model::traits::{Actor, Persistable, TargetNet};
 use model::BasicModel;
 use packets::ActorSettings;
 use param_updater_thread::{spawn_param_updater_thread, ParamUpdaterThreadMessage};
-use plot_datum_sender::PlotDatumSender;
 use rand::Rng;
 use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
@@ -44,7 +39,6 @@ fn step(
     schedule: &mut ActorSchedule,
     master_thread_sender: &Sender<MasterThreadMessage>,
     ui_thread_sender: &Sender<UiThreadMessage>,
-    plot_datum_sender: &PlotDatumSender,
     plot_remote: &mut Option<ActorPlotRemote>,
     param_updater_thread_sender: &Sender<ParamUpdaterThreadMessage>,
 ) -> bool {
@@ -139,19 +133,12 @@ impl ThreadType for EnvThread {
         Sender<MasterThreadMessage>,
         Sender<UiThreadMessage>,
         Sender<GameThreadMessage>,
-        Sender<PlotThreadMessage>,
         ActorSettings,
     );
 
     fn spawn(receiver: Receiver<Self::Message>, args: Self::SpawnArgs) -> JoinHandle<()> {
         std::thread::spawn(move || {
-            let (
-                master_thread_sender,
-                ui_thread_sender,
-                game_thread_sender,
-                plot_thread_sender,
-                settings,
-            ) = args;
+            let (master_thread_sender, ui_thread_sender, game_thread_sender, settings) = args;
             const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
             const ALPHA: f64 = 0.6;
             let agent =
@@ -164,7 +151,6 @@ impl ThreadType for EnvThread {
                 Arc::clone(&agent),
                 &settings,
             );
-            let plot_datum_sender = PlotDatumSender::new(plot_thread_sender);
             let mut schedule = ActorSchedule::new(settings.eps, PARAM_UPDATE_INTERVAL_STEPS);
             let mut plot_remote = settings
                 .plot_server_addr
@@ -226,7 +212,6 @@ impl ThreadType for EnvThread {
                             &mut schedule,
                             &master_thread_sender,
                             &ui_thread_sender,
-                            &plot_datum_sender,
                             &mut plot_remote,
                             &param_updater_thread_sender,
                         );

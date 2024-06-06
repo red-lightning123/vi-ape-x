@@ -1,7 +1,6 @@
 pub enum ThreadId {
     Game,
     Ui,
-    Plot,
     Env,
 }
 
@@ -10,14 +9,10 @@ impl ThreadId {
         match self {
             Self::Game => 1,
             Self::Ui => 2,
-            Self::Plot => 4,
-            Self::Env => 8,
+            Self::Env => 4,
         }
     }
     pub fn all_flags() -> u8 {
-        Self::Game.as_bit_flag()
-            | Self::Ui.as_bit_flag()
-            | Self::Plot.as_bit_flag()
-            | Self::Env.as_bit_flag()
+        Self::Game.as_bit_flag() | Self::Ui.as_bit_flag() | Self::Env.as_bit_flag()
     }
 }

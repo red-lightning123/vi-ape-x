@@ -2,8 +2,8 @@ mod message;
 mod thread_id;
 
 use super::thread::{ActiveThread, Thread};
-use crate::{EnvThread, GameThread, PlotThread, UiThread};
-use crate::{EnvThreadMessage, GameThreadMessage, PlotThreadMessage, UiThreadMessage};
+use crate::{EnvThread, GameThread, UiThread};
+use crate::{EnvThreadMessage, GameThreadMessage, UiThreadMessage};
 use crossbeam_channel::Receiver;
 pub use message::{MasterMessage, MasterThreadMessage};
 use packets::ActorSettings;
@@ -26,7 +26,6 @@ pub struct Master {
     ui_thread: ActiveThread<UiThread>,
     env_thread: ActiveThread<EnvThread>,
     game_thread: ActiveThread<GameThread>,
-    plot_thread: ActiveThread<PlotThread>,
 }
 
 impl Master {
@@ -34,7 +33,6 @@ impl Master {
         let (sender, receiver) = crossbeam_channel::unbounded::<MasterThreadMessage>();
         let game_thread = Thread::new();
         let ui_thread = Thread::new();
-        let plot_thread = Thread::new();
         let env_thread = Thread::new();
 
         let game_thread = game_thread.spawn((
@@ -43,12 +41,10 @@ impl Master {
             env_thread.sender().clone(),
         ));
         let ui_thread = ui_thread.spawn(sender.clone());
-        let plot_thread = plot_thread.spawn(sender.clone());
         let env_thread = env_thread.spawn((
             sender,
             ui_thread.sender().clone(),
             game_thread.sender().clone(),
-            plot_thread.sender().clone(),
             settings,
         ));
         Self {
@@ -56,7 +52,6 @@ impl Master {
             receiver,
             game_thread,
             ui_thread,
-            plot_thread,
             env_thread,
         }
     }
@@ -68,8 +63,7 @@ impl Master {
     fn send_all(&self, message: MasterMessage) {
         self.ui_thread.send_master(message.clone()).unwrap();
         self.env_thread.send_master(message.clone()).unwrap();
-        self.game_thread.send_master(message.clone()).unwrap();
-        self.plot_thread.send_master(message.clone()).unwrap();
+        self.game_thread.send_master(message).unwrap();
     }
 
     fn wait_all_done(&self) {
@@ -152,7 +146,6 @@ impl Master {
                 self.ui_thread.join().unwrap();
                 self.env_thread.join().unwrap();
                 self.game_thread.join().unwrap();
-                self.plot_thread.join().unwrap();
                 Ok(())
             }
         }
