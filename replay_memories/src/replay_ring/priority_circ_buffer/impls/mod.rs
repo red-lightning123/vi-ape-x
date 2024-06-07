@@ -21,7 +21,7 @@ impl<P: Priority, V> PriorityCircBuffer<P, V> {
     pub fn truncate(&mut self, truncated_len: usize) {
         if self.len() > truncated_len {
             let new_tail = self.mod_max_size(self.head as isize - truncated_len as isize);
-            while self.tail < new_tail {
+            while self.tail != new_tail {
                 self.reset_entry(self.tail);
                 self.tail += 1;
                 if self.tail == self.max_size {
