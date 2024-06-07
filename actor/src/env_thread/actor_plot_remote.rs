@@ -23,6 +23,6 @@ impl ActorPlotRemote {
     pub fn send(&mut self, episode_score: u32) {
         let secs_since_start = (Instant::now() - self.start_instant).as_secs_f64();
         self.episode_score_plot_remote
-            .send((episode_score.into(), secs_since_start));
+            .send((secs_since_start, episode_score.into()));
     }
 }
