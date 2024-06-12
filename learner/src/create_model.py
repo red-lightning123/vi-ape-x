@@ -60,7 +60,7 @@ LEARNING_RATE = 0.000025
 N_STEPS = 3
 GAMMA = 0.99
 
-JUMP = False
+JUMP = True
 
 if JUMP:
     n_actions = 3

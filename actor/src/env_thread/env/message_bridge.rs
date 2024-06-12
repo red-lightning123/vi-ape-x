@@ -70,7 +70,7 @@ impl MessageBridge {
         }
     }
     pub const fn n_actions() -> u8 {
-        const JUMP_ENABLED: bool = false;
+        const JUMP_ENABLED: bool = true;
         if JUMP_ENABLED {
             3
         } else {
