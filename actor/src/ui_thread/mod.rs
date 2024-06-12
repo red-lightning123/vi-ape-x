@@ -43,7 +43,7 @@ impl ThreadType for UiThread {
     type SpawnArgs = Sender<MasterThreadMessage>;
 
     fn spawn(receiver: Receiver<Self::Message>, args: Self::SpawnArgs) -> JoinHandle<()> {
-        const VARIANT: UiImplVariant = UiImplVariant::Gl;
+        const VARIANT: UiImplVariant = UiImplVariant::Dummy;
         const SPAWN_FN: fn(
             receiver: Receiver<UiThreadMessage>,
             master_thread_sender: Sender<MasterThreadMessage>,
