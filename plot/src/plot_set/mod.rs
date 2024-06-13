@@ -19,8 +19,8 @@ impl PlotSet {
                     Plot::new(output_path.join("actors"), actor_id.to_string().into(), 1)
                 })
                 .collect(),
-            loss: Plot::new(output_path.into(), "loss".into(), 10000),
-            q_val: Plot::new(output_path.into(), "q_val".into(), 10000),
+            loss: Plot::new(output_path.into(), "loss".into(), 2500),
+            q_val: Plot::new(output_path.into(), "q_val".into(), 2500),
         }
     }
     pub fn add_datum(&mut self, plot_kind: PlotKind, datum: (f64, f64)) {
