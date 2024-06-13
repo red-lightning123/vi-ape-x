@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.5.7", features = ["derive"] }
 packets = { version = "0.1.0", path = "../packets" }
 ports = { version = "0.1.0", path = "../ports" }
 tcp_io = { version = "0.1.0", path = "../tcp_io" }

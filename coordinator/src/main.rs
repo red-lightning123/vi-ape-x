@@ -1,3 +1,7 @@
+mod args;
+
+use args::Args;
+use clap::Parser;
 use packets::{
     ActorConnReply, ActorSettings, CoordinatorRequest, LearnerConnReply, LearnerSettings,
     PlotConnReply, PlotSettings, ReplayConnReply, ReplaySettings,
@@ -37,6 +41,7 @@ fn reset_term_color(stream: &mut StandardStream) {
 }
 
 fn main() {
+    let args = Args::parse();
     let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::COORDINATOR)).unwrap();
     let mut clients = vec![];
     let mut learner_addr = None;
@@ -116,12 +121,15 @@ fn main() {
     for (stream, client) in clients {
         match client {
             Client::Actor { id } => {
+                let eps = args
+                    .eps_constant
+                    .unwrap_or_else(|| compute_eps(id, actor_count));
                 let settings = ActorSettings {
                     replay_server_addr,
                     learner_addr,
                     plot_server_addr,
                     id,
-                    eps: compute_eps(id, actor_count),
+                    eps,
                 };
                 let reply = ActorConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
