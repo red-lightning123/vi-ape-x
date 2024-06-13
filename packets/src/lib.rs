@@ -15,7 +15,7 @@ pub enum CoordinatorRequest {
 #[derive(Serialize, Deserialize)]
 pub struct ActorSettings {
     pub learner_addr: Option<SocketAddr>,
-    pub replay_server_addr: SocketAddr,
+    pub replay_server_addr: Option<SocketAddr>,
     pub plot_server_addr: Option<SocketAddr>,
     pub id: usize,
     pub eps: f64,
@@ -28,7 +28,7 @@ pub struct ActorConnReply {
 
 #[derive(Serialize, Deserialize)]
 pub struct LearnerSettings {
-    pub replay_server_addr: SocketAddr,
+    pub replay_server_addr: Option<SocketAddr>,
     pub plot_server_addr: Option<SocketAddr>,
 }
 

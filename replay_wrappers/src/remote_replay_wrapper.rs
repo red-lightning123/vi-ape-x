@@ -9,21 +9,23 @@ use std::path::Path;
 
 pub struct RemoteReplayWrapper<T> {
     model: T,
-    memory: ReplayRemote,
+    memory: Option<ReplayRemote>,
     alpha: f64,
 }
 
 impl<T> RemoteReplayWrapper<T> {
-    pub fn wrap(model: T, replay_server_addr: SocketAddr, alpha: f64) -> Self {
+    pub fn wrap(model: T, replay_server_addr: Option<SocketAddr>, alpha: f64) -> Self {
         Self {
             model,
-            memory: ReplayRemote::new(replay_server_addr),
+            memory: replay_server_addr.map(ReplayRemote::new),
             alpha,
         }
     }
 
     pub fn truncate_memory(&mut self) {
-        self.memory.truncate()
+        if let Some(ref mut memory) = self.memory {
+            memory.truncate()
+        }
     }
 
     fn convert_abs_td_error_to_priority(&self, abs_td_error: f64) -> f64 {
@@ -41,7 +43,10 @@ impl<T> RemoteReplayWrapper<T> {
                 index: *index,
                 priority,
             });
-        self.memory.update_priorities(updates.collect());
+        let updates = updates.collect();
+        if let Some(ref mut memory) = self.memory {
+            memory.update_priorities(updates);
+        }
     }
 }
 
@@ -53,8 +58,9 @@ impl RemoteReplayWrapper<BasicModel> {
 
     pub fn remember(&mut self, transition: CompressedTransition) {
         let priority = self.compute_priority(&transition);
-        self.memory
-            .add_transition_with_priority(transition, priority);
+        if let Some(ref mut memory) = self.memory {
+            memory.add_transition_with_priority(transition, priority);
+        }
     }
 }
 
@@ -85,22 +91,26 @@ impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
 
     pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
         const BATCH_SIZE: usize = 512;
-        match self.memory.sample_batch(BATCH_SIZE) {
-            SampleBatchResult::Ok(reply) => Some(self.train_on_sampled_batch(reply, beta)),
-            SampleBatchResult::Err(err) => match err {
-                SampleBatchErrorKind::NotEnoughTransitions => {
-                    // When there aren't enough transitions to sample a batch,
-                    // the model has nothing to predict, which means that
-                    // training steps are extremely fast. Since sample requests
-                    // are transmitted over TCP, repeated sample requests at
-                    // such a high rate may actually cause the machine to run
-                    // out of ephemeral ports, resulting in connection errors.
-                    // Therefore, we simulate a slight delay to avoid
-                    // overwhelming the machine with requests
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    None
-                }
-            },
+        if let Some(ref memory) = self.memory {
+            match memory.sample_batch(BATCH_SIZE) {
+                SampleBatchResult::Ok(reply) => Some(self.train_on_sampled_batch(reply, beta)),
+                SampleBatchResult::Err(err) => match err {
+                    SampleBatchErrorKind::NotEnoughTransitions => {
+                        // When there aren't enough transitions to sample a batch,
+                        // the model has nothing to predict, which means that
+                        // training steps are extremely fast. Since sample requests
+                        // are transmitted over TCP, repeated sample requests at
+                        // such a high rate may actually cause the machine to run
+                        // out of ephemeral ports, resulting in connection errors.
+                        // Therefore, we simulate a slight delay to avoid
+                        // overwhelming the machine with requests
+                        std::thread::sleep(std::time::Duration::from_millis(500));
+                        None
+                    }
+                },
+            }
+        } else {
+            None
         }
     }
 }
@@ -117,12 +127,16 @@ impl<T: Persistable> Persistable for RemoteReplayWrapper<T> {
         self.model.save(path.join("model_vars"));
         let memory_path = path.join("memory");
         fs::create_dir_all(&memory_path).unwrap();
-        self.memory.save(memory_path);
+        if let Some(ref memory) = self.memory {
+            memory.save(memory_path);
+        }
     }
     fn load<P: AsRef<Path>>(&mut self, path: P) {
         let path = path.as_ref();
         self.model.load(path.join("model_vars"));
-        self.memory.load(path.join("memory"));
+        if let Some(ref mut memory) = self.memory {
+            memory.load(path.join("memory"));
+        }
     }
 }
 

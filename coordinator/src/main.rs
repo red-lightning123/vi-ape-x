@@ -137,7 +137,7 @@ fn main() {
         match client {
             Client::Actor { id } => {
                 let settings = ActorSettings {
-                    replay_server_addr,
+                    replay_server_addr: Some(replay_server_addr),
                     learner_addr: Some(learner_addr),
                     plot_server_addr,
                     id,
@@ -148,7 +148,7 @@ fn main() {
             }
             Client::Learner => {
                 let settings = LearnerSettings {
-                    replay_server_addr,
+                    replay_server_addr: Some(replay_server_addr),
                     plot_server_addr,
                 };
                 let reply = LearnerConnReply { settings };
