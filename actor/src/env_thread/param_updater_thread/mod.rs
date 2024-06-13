@@ -19,13 +19,15 @@ pub fn spawn_param_updater_thread(
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
     settings: &ActorSettings,
 ) -> JoinHandle<()> {
-    let learner_client = LearnerClient::new(settings.learner_addr);
+    let learner_client = settings.learner_addr.map(LearnerClient::new);
     std::thread::spawn(move || loop {
         match receiver.recv().unwrap() {
             ParamUpdaterThreadMessage::UpdateParams => {
-                let params = learner_client.get_params();
-                let mut agent = agent.write().unwrap();
-                agent.set_params(params);
+                if let Some(ref learner_client) = learner_client {
+                    let params = learner_client.get_params();
+                    let mut agent = agent.write().unwrap();
+                    agent.set_params(params);
+                }
             }
             ParamUpdaterThreadMessage::Stop => break,
         }

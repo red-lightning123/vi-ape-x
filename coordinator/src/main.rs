@@ -138,7 +138,7 @@ fn main() {
             Client::Actor { id } => {
                 let settings = ActorSettings {
                     replay_server_addr,
-                    learner_addr,
+                    learner_addr: Some(learner_addr),
                     plot_server_addr,
                     id,
                     eps: compute_eps(id, actor_count),
