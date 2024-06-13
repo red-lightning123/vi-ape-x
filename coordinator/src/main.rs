@@ -113,32 +113,12 @@ fn main() {
 
     let actor_count = actor_id + 1;
 
-    let learner_addr = match learner_addr {
-        Some(addr) => addr,
-        None => {
-            set_term_color(&mut stdout, Color::Red);
-            println!("attempted to start but no learner connected. aborting...");
-            reset_term_color(&mut stdout);
-            return;
-        }
-    };
-
-    let replay_server_addr = match replay_server_addr {
-        Some(addr) => addr,
-        None => {
-            set_term_color(&mut stdout, Color::Red);
-            println!("attempted to start but no replay server connected. aborting...");
-            reset_term_color(&mut stdout);
-            return;
-        }
-    };
-
     for (stream, client) in clients {
         match client {
             Client::Actor { id } => {
                 let settings = ActorSettings {
-                    replay_server_addr: Some(replay_server_addr),
-                    learner_addr: Some(learner_addr),
+                    replay_server_addr,
+                    learner_addr,
                     plot_server_addr,
                     id,
                     eps: compute_eps(id, actor_count),
@@ -148,7 +128,7 @@ fn main() {
             }
             Client::Learner => {
                 let settings = LearnerSettings {
-                    replay_server_addr: Some(replay_server_addr),
+                    replay_server_addr,
                     plot_server_addr,
                 };
                 let reply = LearnerConnReply { settings };
