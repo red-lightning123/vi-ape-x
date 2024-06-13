@@ -84,7 +84,7 @@ impl<T: PrioritizedLearner<CompressedTransition>> RemoteReplayWrapper<T> {
     }
 
     pub fn train_step(&mut self, beta: f64) -> Option<LearningStepInfo> {
-        const BATCH_SIZE: usize = 32;
+        const BATCH_SIZE: usize = 512;
         match self.memory.sample_batch(BATCH_SIZE) {
             SampleBatchResult::Ok(reply) => Some(self.train_on_sampled_batch(reply, beta)),
             SampleBatchResult::Err(err) => match err {
