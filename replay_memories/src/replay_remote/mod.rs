@@ -45,9 +45,9 @@ impl ReplayRemote {
         self.client.sample_batch(batch_len)
     }
     pub fn save<P: AsRef<Path>>(&self, _path: P) {
-        todo!()
+        // TODO: might want to save the members of this struct here
     }
     pub fn load<P: AsRef<Path>>(&mut self, _path: P) {
-        todo!()
+        // TODO: might want to load the members of this struct here
     }
 }
