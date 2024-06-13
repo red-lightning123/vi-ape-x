@@ -45,13 +45,14 @@ fn main() {
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
     let local_ip_addr = local_ip().unwrap();
-    let local_addr = (local_ip_addr, ports::PLOT).into();
+    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0)).unwrap();
+    let local_port = socket.local_addr().unwrap().port();
+    let local_addr = (local_ip_addr, local_port).into();
     let settings = coordinator_client.plot_conn(local_addr);
-    run(settings);
+    run(socket, settings);
 }
 
-fn run(settings: PlotSettings) {
-    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::PLOT)).unwrap();
+fn run(socket: TcpListener, settings: PlotSettings) {
     let mut plot_set = PlotSet::new("progress", settings.actor_count);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();

@@ -46,22 +46,20 @@ fn spawn_batch_learner_thread(
 }
 
 fn spawn_param_server_thread(
+    socket: TcpListener,
     agent: Arc<RwLock<RemoteReplayWrapper<BasicModel>>>,
 ) -> JoinHandle<()> {
-    std::thread::spawn(move || {
-        let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::LEARNER)).unwrap();
-        loop {
-            let (stream, _source_addr) = socket.accept().unwrap();
-            let request = tcp_io::deserialize_from(&stream).unwrap();
-            match request {
-                LearnerRequest::GetParams => {
-                    let params = {
-                        let agent = agent.read().unwrap();
-                        agent.params()
-                    };
-                    let reply = GetParamsReply { params };
-                    tcp_io::serialize_into(stream, &reply).unwrap();
-                }
+    std::thread::spawn(move || loop {
+        let (stream, _source_addr) = socket.accept().unwrap();
+        let request = tcp_io::deserialize_from(&stream).unwrap();
+        match request {
+            LearnerRequest::GetParams => {
+                let params = {
+                    let agent = agent.read().unwrap();
+                    agent.params()
+                };
+                let reply = GetParamsReply { params };
+                tcp_io::serialize_into(stream, &reply).unwrap();
             }
         }
     })
@@ -117,12 +115,14 @@ fn main() {
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
     let local_ip_addr = local_ip().unwrap();
-    let local_addr = (local_ip_addr, ports::LEARNER).into();
+    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0)).unwrap();
+    let local_port = socket.local_addr().unwrap().port();
+    let local_addr = (local_ip_addr, local_port).into();
     let settings = coordinator_client.learner_conn(local_addr);
-    run(settings);
+    run(socket, settings);
 }
 
-fn run(settings: LearnerSettings) {
+fn run(socket: TcpListener, settings: LearnerSettings) {
     const ALPHA: f64 = 0.6;
     let agent = Arc::new(RwLock::new(RemoteReplayWrapper::wrap(
         BasicModel::new(),
@@ -131,7 +131,7 @@ fn run(settings: LearnerSettings) {
     )));
     let batch_learner_thread =
         spawn_batch_learner_thread(Arc::clone(&agent), settings.plot_server_addr);
-    let param_server_thread = spawn_param_server_thread(agent);
+    let param_server_thread = spawn_param_server_thread(socket, agent);
     batch_learner_thread.join().unwrap();
     param_server_thread.join().unwrap();
 }

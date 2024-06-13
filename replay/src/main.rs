@@ -46,15 +46,16 @@ fn main() {
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
     let local_ip_addr = local_ip().unwrap();
-    let local_addr = (local_ip_addr, ports::REPLAY).into();
+    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 0)).unwrap();
+    let local_port = socket.local_addr().unwrap().port();
+    let local_addr = (local_ip_addr, local_port).into();
     let settings = coordinator_client.replay_conn(local_addr);
-    run(settings);
+    run(socket, settings);
 }
 
-fn run(_settings: ReplaySettings) {
+fn run(socket: TcpListener, _settings: ReplaySettings) {
     const REPLAY_MAX_LEN: usize = 3_000_000;
     const REPLAY_TRUNCATED_LEN: usize = 2_000_000;
-    let socket = TcpListener::bind((Ipv4Addr::UNSPECIFIED, ports::REPLAY)).unwrap();
     let mut replay = ReplayRing::with_max_size(REPLAY_MAX_LEN);
     loop {
         let (stream, _source_addr) = socket.accept().unwrap();
