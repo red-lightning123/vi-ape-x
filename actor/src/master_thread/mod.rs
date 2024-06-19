@@ -15,10 +15,10 @@ fn print_mode_match_err(mode: Mode) {
     eprintln!("command cannot be executed in {} mode", mode)
 }
 
-pub fn spawn_master_thread(settings: ActorSettings) -> JoinHandle<()> {
+pub fn spawn_master_thread(args: crate::Args, settings: ActorSettings) -> JoinHandle<()> {
     std::thread::spawn(move || {
         const THREAD_NAME: &str = "master";
-        let mut master = Master::new(settings);
+        let mut master = Master::new(args, settings);
 
         master.resume().unwrap_or_else(|e| match e {
             CommandError::ModeMatch => unreachable!("the master should start in Mode::Held"),

@@ -1,6 +1,9 @@
+mod args;
 mod learner_plot_remote;
 mod learner_schedule;
 
+use args::Args;
+use clap::Parser;
 use coordinator_client::CoordinatorClient;
 use learner_plot_remote::LearnerPlotRemote;
 use learner_schedule::LearnerSchedule;
@@ -102,6 +105,7 @@ fn enable_tf_memory_growth() {
 }
 
 fn main() {
+    let args = Args::parse();
     // By default, tensorflow preallocates nearly all of the GPU memory
     // available. This behavior becomes a problem when multiple programs are
     // using it simultaneously, such as in a distributed reinforcement learning
@@ -119,13 +123,13 @@ fn main() {
     let local_port = socket.local_addr().unwrap().port();
     let local_addr = (local_ip_addr, local_port).into();
     let settings = coordinator_client.learner_conn(local_addr);
-    run(socket, settings);
+    run(socket, args, settings);
 }
 
-fn run(socket: TcpListener, settings: LearnerSettings) {
+fn run(socket: TcpListener, args: Args, settings: LearnerSettings) {
     const ALPHA: f64 = 0.6;
     let agent = Arc::new(RwLock::new(RemoteReplayWrapper::wrap(
-        BasicModel::new(),
+        BasicModel::new(args.model_def_path),
         settings.replay_server_addr,
         ALPHA,
     )));

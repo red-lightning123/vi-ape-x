@@ -18,10 +18,10 @@ pub struct BasicModel {
 }
 
 impl BasicModel {
-    pub fn new() -> Self {
+    pub fn new<P: AsRef<Path>>(def_path: P) -> Self {
         let mut graph = Graph::new();
         let model_bundle =
-            SavedModelBundle::load(&SessionOptions::new(), ["serve"], &mut graph, "model")
+            SavedModelBundle::load(&SessionOptions::new(), ["serve"], &mut graph, def_path)
                 .expect("Couldn't load model");
         let fns = ModelFns::new(&model_bundle, &graph);
         Self { model_bundle, fns }

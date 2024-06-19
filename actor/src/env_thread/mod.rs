@@ -20,6 +20,7 @@ use replay_data::State;
 use replay_wrappers::RemoteReplayWrapper;
 use state_accums::filters::{CompressFilter, Filter};
 use state_accums::{FrameStack, PipeFilterToAccum};
+use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use std::thread::JoinHandle;
 
@@ -133,16 +134,21 @@ impl ThreadType for EnvThread {
         Sender<MasterThreadMessage>,
         Sender<UiThreadMessage>,
         Sender<GameThreadMessage>,
+        crate::Args,
         ActorSettings,
     );
 
     fn spawn(receiver: Receiver<Self::Message>, args: Self::SpawnArgs) -> JoinHandle<()> {
         std::thread::spawn(move || {
-            let (master_thread_sender, ui_thread_sender, game_thread_sender, settings) = args;
+            let (master_thread_sender, ui_thread_sender, game_thread_sender, cmd_args, settings) =
+                args;
             const PARAM_UPDATE_INTERVAL_STEPS: u32 = 400;
             const ALPHA: f64 = 0.6;
-            let agent =
-                RemoteReplayWrapper::wrap(BasicModel::new(), settings.replay_server_addr, ALPHA);
+            let agent = RemoteReplayWrapper::wrap(
+                BasicModel::new(cmd_args.model_def_path),
+                settings.replay_server_addr,
+                ALPHA,
+            );
             let agent = Arc::new(RwLock::new(agent));
             let (param_updater_thread_sender, param_updater_thread_receiver) =
                 crossbeam_channel::unbounded::<ParamUpdaterThreadMessage>();

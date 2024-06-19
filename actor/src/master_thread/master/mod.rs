@@ -29,7 +29,7 @@ pub struct Master {
 }
 
 impl Master {
-    pub fn new(settings: ActorSettings) -> Self {
+    pub fn new(args: crate::Args, settings: ActorSettings) -> Self {
         let (sender, receiver) = crossbeam_channel::unbounded::<MasterThreadMessage>();
         let game_thread = Thread::new();
         let ui_thread = Thread::new();
@@ -45,6 +45,7 @@ impl Master {
             sender,
             ui_thread.sender().clone(),
             game_thread.sender().clone(),
+            args,
             settings,
         ));
         Self {

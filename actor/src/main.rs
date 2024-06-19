@@ -1,4 +1,5 @@
 #![allow(dead_code, unused_imports)]
+mod args;
 mod env_thread;
 mod game;
 mod game_interface;
@@ -9,6 +10,8 @@ mod master_thread;
 mod ui_thread;
 mod x11_utils;
 
+use args::Args;
+use clap::Parser;
 use coordinator_client::CoordinatorClient;
 use env_thread::{EnvThread, EnvThreadMessage};
 use game::Game;
@@ -57,6 +60,7 @@ fn enable_tf_memory_growth() {
 }
 
 fn main() {
+    let args = Args::parse();
     // By default, tensorflow preallocates nearly all of the GPU memory
     // available. This behavior becomes a problem when multiple programs are
     // using it simultaneously, such as in a distributed reinforcement learning
@@ -64,12 +68,13 @@ fn main() {
     // an option to dynamically grow its allocated gpu memory, so we enable it
     // to circumvent the memory issue
     enable_tf_memory_growth();
+    std::env::set_var("CUDA_VISIBLE_DEVICES", "-1");
 
     let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
     let coordinator_addr = (coordinator_ip_addr, ports::COORDINATOR).into();
     let coordinator_client = CoordinatorClient::new(coordinator_addr);
     let settings = coordinator_client.actor_conn();
-    let master_thread = spawn_master_thread(settings);
+    let master_thread = spawn_master_thread(args, settings);
     master_thread.join().unwrap();
 }

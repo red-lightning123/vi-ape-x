@@ -146,7 +146,8 @@ pub fn spawn_env_thread(
             TARGET_UPDATE_INTERVAL_STEPS,
         );
         const ALPHA: f64 = 0.6;
-        let mut agent = PrioritizedReplayWrapper::wrap(BasicModel::new(), MEMORY_CAPACITY, ALPHA);
+        let mut agent =
+            PrioritizedReplayWrapper::wrap(BasicModel::new("model"), MEMORY_CAPACITY, ALPHA);
         let mut mode = ThreadMode::Held;
         loop {
             match mode {
