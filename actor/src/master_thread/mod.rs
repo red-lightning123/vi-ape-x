@@ -29,10 +29,10 @@ pub fn spawn_master_thread(args: crate::Args, settings: ActorSettings) -> JoinHa
             std::io::stdin().read_line(&mut command).unwrap();
             let command = command.split_whitespace().collect::<Vec<_>>();
             match command[..] {
-                ["save"] => master.save().unwrap_or_else(|e| match e {
+                ["save", path] => master.save(path).unwrap_or_else(|e| match e {
                     CommandError::ModeMatch => print_mode_match_err(master.mode()),
                 }),
-                ["load"] => master.load().unwrap_or_else(|e| match e {
+                ["load", path] => master.load(path).unwrap_or_else(|e| match e {
                     CommandError::ModeMatch => print_mode_match_err(master.mode()),
                 }),
                 ["hold"] => master.hold().unwrap_or_else(|e| match e {

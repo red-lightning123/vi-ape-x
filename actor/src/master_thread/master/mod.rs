@@ -8,6 +8,7 @@ use crossbeam_channel::Receiver;
 pub use message::{MasterMessage, MasterThreadMessage};
 use packets::ActorSettings;
 use std::fs;
+use std::path::Path;
 pub use thread_id::ThreadId;
 
 pub enum CommandError {
@@ -88,24 +89,25 @@ impl Master {
         }
     }
 
-    pub fn save(&self) -> Result<(), CommandError> {
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), CommandError> {
+        let path = path.as_ref();
         match self.mode {
             Mode::Running => Err(CommandError::ModeMatch),
             Mode::Held => {
-                let saved_path = "saved";
-                fs::create_dir_all(saved_path).unwrap();
-                self.send_all(MasterMessage::Save(saved_path.into()));
+                fs::create_dir_all(path).unwrap();
+                self.send_all(MasterMessage::Save(path.into()));
                 self.wait_all_done();
                 Ok(())
             }
         }
     }
 
-    pub fn load(&self) -> Result<(), CommandError> {
+    pub fn load<P: AsRef<Path>>(&self, path: P) -> Result<(), CommandError> {
+        let path = path.as_ref();
         match self.mode {
             Mode::Running => Err(CommandError::ModeMatch),
             Mode::Held => {
-                self.send_all(MasterMessage::Load("load".into()));
+                self.send_all(MasterMessage::Load(path.into()));
                 self.wait_all_done();
                 Ok(())
             }
