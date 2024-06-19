@@ -8,4 +8,7 @@ pub struct Args {
     /// If unset, chooses actor epsilons according to the formula used by Ape-X (Useful for training)
     #[arg(short, long, required = false)]
     pub eps_constant: Option<f64>,
+    /// Whether to activate the actors while starting them
+    #[arg(short, long, default_value_t = true)]
+    pub activate_actors: bool,
 }

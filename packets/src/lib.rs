@@ -12,13 +12,14 @@ pub enum CoordinatorRequest {
     Start,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ActorSettings {
     pub learner_addr: Option<SocketAddr>,
     pub replay_server_addr: Option<SocketAddr>,
     pub plot_server_addr: Option<SocketAddr>,
     pub id: usize,
     pub eps: f64,
+    pub activate: bool,
 }
 
 #[derive(Serialize, Deserialize)]

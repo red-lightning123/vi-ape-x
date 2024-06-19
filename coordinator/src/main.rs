@@ -130,6 +130,7 @@ fn main() {
                     plot_server_addr,
                     id,
                     eps,
+                    activate: args.activate_actors,
                 };
                 let reply = ActorConnReply { settings };
                 tcp_io::serialize_into(stream, &reply).unwrap();
