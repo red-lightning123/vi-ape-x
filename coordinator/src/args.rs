@@ -9,6 +9,6 @@ pub struct Args {
     #[arg(short, long, required = false)]
     pub eps_constant: Option<f64>,
     /// Whether to activate the actors while starting them
-    #[arg(short, long, default_value_t = true)]
+    #[arg(short, long)]
     pub activate_actors: bool,
 }
