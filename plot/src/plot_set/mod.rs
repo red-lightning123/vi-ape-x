@@ -47,10 +47,14 @@ impl PlotSet {
             },
         }
     }
-    fn plots(&self) -> [&Plot; 2] {
-        [&self.loss, &self.q_val]
+    fn plots(&self) -> Vec<&Plot> {
+        let mut plots: Vec<_> = self.actor_episode_scores.iter().collect();
+        plots.extend([&self.loss, &self.q_val]);
+        plots
     }
-    fn plots_mut(&mut self) -> [&mut Plot; 2] {
-        [&mut self.loss, &mut self.q_val]
+    fn plots_mut(&mut self) -> Vec<&mut Plot> {
+        let mut plots: Vec<_> = self.actor_episode_scores.iter_mut().collect();
+        plots.extend([&mut self.loss, &mut self.q_val]);
+        plots
     }
 }
