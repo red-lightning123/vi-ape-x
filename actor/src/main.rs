@@ -68,7 +68,9 @@ fn main() {
     // an option to dynamically grow its allocated gpu memory, so we enable it
     // to circumvent the memory issue
     enable_tf_memory_growth();
-    std::env::set_var("CUDA_VISIBLE_DEVICES", "-1");
+    if !args.gpu {
+        std::env::set_var("CUDA_VISIBLE_DEVICES", "-1");
+    }
 
     let coordinator_ip_addr = prompt_user_for_service_ip_addr("coordinator");
     println!("coordinator ip addr set to {}...", coordinator_ip_addr);
